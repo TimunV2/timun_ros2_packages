@@ -26,7 +26,7 @@ def generate_launch_description():
         executable="serial_node"
     )
 
-    ld.add_action(joy_node) #to read joy stick input
+    ld.add_action(joy_node) #to read pilot input via joy stick
     ld.add_action(joy_sub_node) #to convert button and axis to velocity and utility command
     ld.add_action(master_controller_node) #to select the final output of cmd velocity and set point
     ld.add_action(serial_node) #to convert and send the data to stm, and to read sensor data
