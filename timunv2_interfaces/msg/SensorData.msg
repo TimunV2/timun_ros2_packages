@@ -1,0 +1,7 @@
+float32 imu_yaw
+float32 imu_pitch
+float32 imu_roll
+float32 depth
+float32 ranges_scan
+float32 confidence
+float32 pressure_inside

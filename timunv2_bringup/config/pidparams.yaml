@@ -1,0 +1,27 @@
+serial_node:
+  pid_parameters:
+    kp_yaw: 0
+    ki_yaw: 0
+    kd_yaw: 0
+    kp_pitch: 0
+    ki_pitch: 0
+    kd_pitch: 0
+    kp_roll: 0
+    ki_roll: 0
+    kd_roll: 0
+    kp_depth: 0
+    ki_depth: 0
+    kd_depth: 0
+
+pipeline_navigation:
+  pid_parameters:
+    kp_heading: 0.001
+    ki_heading: 0
+    kd_heading: 0
+    kp_lateral: 0.002
+    ki_lateral: 0
+    kd_lateral: 0
+    kp_range: 0
+    ki_range: 0
+    kd_range: 0
+    throtle: 0.45

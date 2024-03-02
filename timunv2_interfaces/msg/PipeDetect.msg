@@ -1,0 +1,2 @@
+int16 upper_offset
+int16 lower_offset
