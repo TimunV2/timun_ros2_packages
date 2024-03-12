@@ -26,7 +26,8 @@ class PipelineDetect(Node):
         self.pipeline_value = PipeDetect()
 
         #YOLO Model
-        self.model = YOLO('/home/hasan/ros2_ws/src/timunv2_pipefollowing/timunv2_pipefollowing/pipelinev8n-seg.pt')
+        # self.model = YOLO('/home/hasan/ros2_ws/src/timunv2_pipefollowing/timunv2_pipefollowing/pipelinev8n-seg.pt')
+        self.model = YOLO('/home/hasan/ros2_ws/src/timunv2_pipefollowing/timunv2_pipefollowing/SelangYOLOV8n.pt')
 
         #cv variable
         self.frame = None

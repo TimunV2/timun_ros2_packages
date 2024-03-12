@@ -12,7 +12,8 @@ class Camera_Publisher_Node(Node):
         self.publisher_ = self.create_publisher(Image, "camera_front", 10)
         self.cv_bridge = CvBridge()
 
-        video_path = "/home/hasan/BelajarYOLO/YOLOV8_Pipelinetracking/Pipeline_Youtube.mp4" #for using cideo
+        # video_path = "/home/hasan/BelajarYOLO/YOLOV8_Pipelinetracking/Pipeline_Youtube.mp4" #for using video
+        video_path = "/home/hasan/Videos/dataset1.mp4" #for using video
         self.cap = cv2.VideoCapture(video_path)
         # self.cap = cv2.VideoCapture(0) #for using camera 0 for front, 1 for bottom
 
