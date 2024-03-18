@@ -15,13 +15,13 @@ serial_node:
 
 pipeline_navigation:
   pid_parameters:
-    kp_heading: 0.001
+    kp_heading: -0.001
     ki_heading: 0
     kd_heading: 0
-    kp_lateral: 0.002
+    kp_lateral: -0.001
     ki_lateral: 0
     kd_lateral: 0
     kp_range: 0
     ki_range: 0
     kd_range: 0
-    throtle: 0.45
+    throtle: 0.3

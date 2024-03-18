@@ -177,54 +177,78 @@ class MasterController(Node):
             self.depth_setpoint = 0.0
 
     def operation_mode_(self):
+        # Set point drift :
+        # Use temp_cmd_vel when pairing to timunv2 fc
+        # Use master_cmd_vel when pairing to bluerov2
         if self.movement_mode == 3 and self.operation_mode == 0: #manual operation (All input from joy)
             #throtle and lateral from joy
             self.master_cmd_vel.linear.x = self.joy_cmd_vel.linear.x
             self.master_cmd_vel.linear.y = self.joy_cmd_vel.linear.y
+
+            # Temp / Master Changes
             #setpoint drift from joy
-            self.temp_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
-            self.temp_cmd_vel.angular.x =self.joy_cmd_vel.angular.x
-            self.temp_cmd_vel.angular.y =self.joy_cmd_vel.angular.y
-            self.temp_cmd_vel.angular.z =self.joy_cmd_vel.angular.z
+            self.master_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
+            self.master_cmd_vel.angular.x =self.joy_cmd_vel.angular.x
+            self.master_cmd_vel.angular.y =self.joy_cmd_vel.angular.y
+            self.master_cmd_vel.angular.z =self.joy_cmd_vel.angular.z
 
         elif self.movement_mode == 3 and self.operation_mode == 1: #auto 1 (Pipefoll 1 Heading >> cv, Lateral >> joy, Throtle >> joy)
             #throtle and lateral from joy
             self.master_cmd_vel.linear.x = self.joy_cmd_vel.linear.x
             self.master_cmd_vel.linear.y = self.joy_cmd_vel.linear.y
+
+            # Temp / Master Changes
             #depth setpoint drift from joy
-            self.temp_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
+            self.master_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
             #yaw setpoint drift from cv
-            self.temp_cmd_vel.angular.z =self.pipe_cmd_vel.angular.z
+            self.master_cmd_vel.angular.z =self.pipe_cmd_vel.angular.z
 
         elif self.movement_mode == 3 and self.operation_mode == 2: #auto 2 (Pipefoll 2 Heading >> joy, Lateral >> cv, Throtle >> joy)
             #lateral from cv
             self.master_cmd_vel.linear.x = self.pipe_cmd_vel.linear.x
             #throtle from joy
             self.master_cmd_vel.linear.y = self.joy_cmd_vel.linear.y
+
+            # Temp / Master Changes
             #depth setpoint drift from joy
-            self.temp_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
+            self.master_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
             #yaw setpoint drift from joy
-            self.temp_cmd_vel.angular.z =self.joy_cmd_vel.angular.z
+            self.master_cmd_vel.angular.z =self.joy_cmd_vel.angular.z
 
         elif self.movement_mode == 3 and self.operation_mode == 3: #auto 3 (Pipefoll 3 Heading >> cv, Lateral >> cv, Throtle >> joy)
             #lateral from cv
             self.master_cmd_vel.linear.x = self.pipe_cmd_vel.linear.x
             #throtle from joy
             self.master_cmd_vel.linear.y = self.joy_cmd_vel.linear.y
+
+            # Temp / Master Changes
             #depth setpoint drift from joy
-            self.temp_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
+            self.master_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
             #yaw setpoint drift from cv
-            self.temp_cmd_vel.angular.z =self.pipe_cmd_vel.angular.z
+            self.master_cmd_vel.angular.z =self.pipe_cmd_vel.angular.z
 
         elif self.movement_mode == 3 and self.operation_mode == 4: #auto 4 (Pipefoll 4 Heading >> cv, Lateral >> cv, Throtle >> cv)
             #lateral from cv
             self.master_cmd_vel.linear.x = self.pipe_cmd_vel.linear.x
             #throtle from joy
             self.master_cmd_vel.linear.y = self.pipe_cmd_vel.linear.y
+
+            # Temp / Master Changes
             #depth setpoint drift from joy
-            self.temp_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
+            self.master_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
             #yaw setpoint drift from joy
-            self.temp_cmd_vel.angular.z =self.pipe_cmd_vel.angular.z
+            self.master_cmd_vel.angular.z =self.pipe_cmd_vel.angular.z
+
+        if self.arm_software == False :
+            self.master_cmd_vel.linear.x = 0.0
+            self.master_cmd_vel.linear.y = 0.0
+            self.master_cmd_vel.linear.z = 0.0
+            self.master_cmd_vel.angular.x = 0.0
+            self.master_cmd_vel.angular.y = 0.0
+            self.master_cmd_vel.angular.z = 0.0
+
+        elif self.arm_software == True :
+            pass
 
 
     def mixed_vel_cmd(self):

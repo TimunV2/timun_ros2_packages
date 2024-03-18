@@ -67,8 +67,10 @@ class JoySubNode(Node):
 
         #"arrow up"button as lumen intensity
         if( msg.axes[6] > 0 and self.lumen_pwr < 100 ):
+        # if( msg.axes[5] > 0 and self.lumen_pwr < 100 ):
             self.lumen_pwr += 1
         elif( msg.axes[6] < 0 and self.lumen_pwr > 0):
+        # elif( msg.axes[5] < 0 and self.lumen_pwr > 0):
             self.lumen_pwr -= 1
         elif( self.lumen_pwr > 100 ):
             self.lumen_pwr = 100
