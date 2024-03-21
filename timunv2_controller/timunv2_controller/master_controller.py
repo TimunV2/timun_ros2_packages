@@ -60,6 +60,8 @@ class MasterController(Node):
         self.stabilize_state_old = False
         self.depthhold_state_new = False
         self.depthhold_state_old = False
+        self.fully_assist_new = False
+        self.fully_assist_old = False
 
         #set point drift sensitivity 
         self.yaw_drift_scale = 1.0
@@ -110,6 +112,7 @@ class MasterController(Node):
         #capture actual
         #============================================================================
         if(self.stabilize_state_new == True and self.stabilize_state_old == False):
+            self.get_logger().info("Stabilize Mode Active")
             #capture current orientation value and make it as set-point
             self.yaw_setpoint = self.imu_yaw
             self.pitch_setpoint = self.imu_pitch
@@ -117,6 +120,7 @@ class MasterController(Node):
         self.stabilize_state_old = self.stabilize_state_new
         
         if(self.depthhold_state_new == True and self.depthhold_state_old == False):
+            self.get_logger().info("Depthhold Mode Active")
             #capture current depth value and make it as set-point
             self.depth_setpoint = self.depth_value
         self.depthhold_state_old = self.depthhold_state_new

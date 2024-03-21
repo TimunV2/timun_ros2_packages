@@ -52,8 +52,8 @@ class PipelineNav(Node):
         self.lateral_output = self.pipe_lateral_pid.compute(self.lower_error, dt=0.01)
         # print(f"Heading Output: {self.heading_output}, Lateral Output: {self.lateral_output}")
 
-        self.pipe_cmd_vel.angular.z = float(self.heading_output)
-        self.pipe_cmd_vel.linear.x = float(self.lateral_output)
+        self.pipe_cmd_vel.angular.z = float(-1 * self.heading_output)
+        self.pipe_cmd_vel.linear.x = float(-1 * self.lateral_output)
 
         self.pipe_cmd_vel.linear.y = float(self.throtle - abs(self.lower_error/320))
         
@@ -81,10 +81,6 @@ class PipelineNav(Node):
                 self.k_lateral[1] = pipeline_navigation_pid_parameters.get('ki_lateral', 0)
                 self.k_lateral[2] = pipeline_navigation_pid_parameters.get('kd_lateral', 0)
                 self.throtle = pipeline_navigation_pid_parameters.get('throtle', 0)
-
-                # print("kp_heading: ", self.k_heading[0])
-                # print("ki_heading: ", self.k_heading[1])
-                # print("kd_heading: ", self.k_heading[2])
 
                 self.pipe_heading_pid.kp = self.k_heading[0]
                 self.pipe_heading_pid.ki = self.k_heading[1]

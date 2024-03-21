@@ -21,7 +21,7 @@ class Camera_Publisher_Node(Node):
             self.get_logger().error("Failed to open the camera")
             return
 
-        self.timer_ = self.create_timer(0.1, self.timer_callback)
+        self.timer_ = self.create_timer(0.01, self.timer_callback)
 
     def timer_callback(self):
         ret, frame = self.cap.read()

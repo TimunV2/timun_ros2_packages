@@ -18,8 +18,8 @@ class PipelineDetect(Node):
         self.camera_sub_ = self.create_subscription(Image, "camera_front", self.image_callback,10)
         self.cmd_utl_sub_ = self.create_subscription(JoyUtilities, "joy_cmd_utl", self.cmd_utl_callback,10)
         self.pipeline_pub_ = self.create_publisher(PipeDetect, "pipeline_value", 10)
-        self.timer_ = self.create_timer(0.1, self.timer_callback)
-        self.timer_pub_ = self.create_timer(0.1, self.timer_publish)
+        self.timer_ = self.create_timer(0.055, self.timer_callback)
+        self.timer_pub_ = self.create_timer(0.01, self.timer_publish)
 
         self.cv_bridge = CvBridge()
 
@@ -141,8 +141,6 @@ class PipelineDetect(Node):
         # Show the processed frame with annotations
         cv2.imshow("Pipefollowing", self.show_frame)
         cv2.waitKey(1)
-
-        # print(f"fps : {fps_text} , upper_offset : {self.pipeline_value.upper_offset}, lower_offset : {self.pipeline_value.lower_offset}")
 
     def timer_callback(self):
         self.yolo_inference()
