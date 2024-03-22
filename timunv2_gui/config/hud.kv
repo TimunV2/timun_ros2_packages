@@ -644,7 +644,8 @@
             pos_hint:{'center_x':.5,'center_y':.9}
         Label:
             text:'v'
-            size_hint:(.2,.05)
+            size_hint:(None,None)
+            size: (50,50)
             halign:'center'
             pos_hint:{'center_x':.5,'center_y':.92}
         BoxLayout:
@@ -653,7 +654,8 @@
             pos_hint:{'center_x':.95,'center_y':.825}
         Image:
             id:roll
-            size_hint_y:.15
+            size_hint:(None,None)
+            size: (152,152)
             keep_ratio:True
             pos_hint:{'center_x':.95,'center_y':.825}
             canvas.before:

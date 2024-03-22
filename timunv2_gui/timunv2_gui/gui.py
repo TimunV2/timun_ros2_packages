@@ -77,6 +77,8 @@ class TimunLayout(Widget):
         super(TimunLayout,self).__init__(**kwargs)
         self.node = GuiNode()
         logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s')
+        Window.maximize()
+        print(str(Window.size))
         with self.ids.pitch.canvas:
             Color(0,0,0,0)
             Rectangle(pos=self.pos, size=Window.size)
@@ -95,13 +97,17 @@ class TimunLayout(Widget):
         self.ids.throtleB.state ="down"
         self.ids.camF_btn.state ='down'
 
-        self.pitch_x = 1920*.95 - self.ids.roll.width/2
-        self.pitch_y = 1136*.825- self.ids.roll.height/2
+        self.pitch_x = (Window.size[0]*.95) - (self.ids.roll.size[1]/2)
+        self.pitch_y = (Window.size[1]*.825)- (self.ids.roll.size[0]/2)
+        self.yaw_x = (Window.size[0]*.5) - 100
+        self.yaw_y = (Window.size[1]*.86)
+        print(self.pitch_x,self.pitch_y)
         self.ids.cam_main.source = os.path.join(SHARE,'camF.jpg')
         self.ids.roll.source = os.path.join(SHARE,'roll.png')
         self.camF = None
         self.camB = None
         self.show = Settings()
+
         self.setting_popup = Popup(title="Settings", content=self.show, 
                             size_hint=(None,None), size=(800,800))
         logging.getLogger().addHandler(LogUpdateHandler(self))
@@ -110,7 +116,6 @@ class TimunLayout(Widget):
     def update(self,dt):
         rclpy.spin_once(self.node, timeout_sec=0.05)
         r,p,y,d,ra,bat_n,bat_r,camF,camB = self.node.send_var()
-        
         if(self.ids.camF_btn.state == 'down'):
             cam = camF
         elif(self.ids.camB_btn.state == 'down'):
@@ -183,11 +188,13 @@ class TimunLayout(Widget):
             Rectangle(source=os.path.join(SHARE,'pitch_1.png'),pos=pos_pitch,size=(152,152))
             StencilPop()
         with self.ids.yaw.canvas:
+            pos_yaw = [self.yaw_x,self.yaw_y]
+            pos_head = [self.yaw_x-200,self.yaw_y]
             StencilPush()
             Color(1,1,1,.3)
-            Rectangle(pos=[self.pos[0]+864,self.pos[1]+874],size=(192,51))
+            Rectangle(pos=pos_yaw,size=(200,51))
             StencilUse()
-            Rectangle(source=os.path.join(SHARE,'yaw.png'),pos=[self.pos[0]+864,self.pos[1]+874],size=(384,51))
+            Rectangle(source=os.path.join(SHARE,'yaw.png'),pos=pos_head,size=(600,51))
             StencilPop()
             
     def open_setting(self):
@@ -393,8 +400,6 @@ class LogUpdateHandler(logging.Handler):
 class GUI(App):
     def build(self):
         layout = TimunLayout()
-        Window.maximize()
-        print(str(Window.size))
         return layout
 
 def check_float(var):
