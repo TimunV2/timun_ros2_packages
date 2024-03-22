@@ -1,8 +1,4 @@
-bool mode_operation
-bool mode_depth
-bool mode_map
-bool calibration
-bool record
+bool mode_vo
 int8 mode_auto
 int8 mode_throtle
 int8 mode_pipe

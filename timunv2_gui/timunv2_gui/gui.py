@@ -161,6 +161,7 @@ class TimunLayout(Widget):
         msg1 = GuiUtilities()
         # msg1.mode_orientation = check_toggle(self.ids.modeO.state)
         # msg1.mode_depth = check_toggle(self.ids.modeD.state)
+        msg1.mode_vo = self.ids.VO.state
         msg1.mode_auto = check_control(self)
         msg1.mode_pipe = check_obj(self.ids.pipeO.state, self.ids.pipeT.state)
         msg1.mode_oa = check_obj(self.ids.oaO.state, self.ids.oaT.state)
@@ -274,7 +275,7 @@ class TimunLayout(Widget):
         if self.ids.modeM.state == "down":
             self.ids.modeS.state ="normal"
             self.ids.modeD.state ="normal"
-            logging.debug('Update Control Mode to Auto')
+            logging.debug('Update Control Mode to Manual')
         else:
             logging.debug('Update Control Mode to Manual')
             self.ids.modeS.state ="normal"
@@ -285,9 +286,9 @@ class TimunLayout(Widget):
         if self.ids.modeS.state == "down":
             self.ids.modeM.state ="normal"
             self.ids.modeD.state ="normal"
-            logging.debug('Update Control Mode to Manual')
+            logging.debug('Update Control Mode to Stabilize')
         else:
-            logging.debug('Update Control Mode to Auto')
+            logging.debug('Update Control Mode to Manual')
             self.ids.modeM.state ="down"
             self.ids.modeS.state ="normal"
             self.ids.modeD.state ="normal"
@@ -295,17 +296,12 @@ class TimunLayout(Widget):
         if self.ids.modeD.state == "down":
             self.ids.modeM.state ="normal"
             self.ids.modeS.state ="normal"
-            logging.debug('Update Control Mode to Manual')
+            logging.debug('Update Control Mode to Depth-Hold')
         else:
-            logging.debug('Update Control Mode to Auto')
+            logging.debug('Update Control Mode to Manual')
             self.ids.modeM.state ="down"
             self.ids.modeS.state ="normal"
             self.ids.modeD.state ="normal"
-    def stabilization(self,var,text):
-        if var == 'down':
-            logging.debug(f'Update {text} Mode to Stabilization')
-        else:
-            logging.debug(f'Update {text} Mode to Manual')
     def objective(self,var,text,text2):
         if var == 'down':
             logging.debug(f'Switch {text} Reference to {text2} Mission')
@@ -450,7 +446,7 @@ def check_control(self):
     elif self.ids.modeD.state == 'down':
         check = 3
     else:
-        check = 3
+        check = 1
     return check
 
 def check_lumen(self):
