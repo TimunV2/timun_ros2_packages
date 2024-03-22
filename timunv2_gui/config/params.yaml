@@ -1,0 +1,48 @@
+depth:
+  kd: 5
+  ki: 25
+  kp: 90
+mapping:
+  status: false
+oa:
+  heading:
+    kd: 0
+    ki: 0
+    kp: 999
+  iou: 0
+  range:
+    kd: 0
+    ki: 0
+    kp: 10
+  surge:
+    kd: 0
+    ki: 0
+    kp: 10
+  threshold: 9
+pipe:
+  heading:
+    kd: 0
+    ki: 0
+    kp: 10
+  iou: 0
+  range:
+    kd: 0
+    ki: 0
+    kp: 10
+  surge:
+    kd: 0
+    ki: 0
+    kp: 10
+  threshold: 99
+pitch:
+  kd: 5
+  ki: 25
+  kp: 90
+roll:
+  kd: 1
+  ki: 10
+  kp: 99
+yaw:
+  kd: 3
+  ki: 10
+  kp: 200
