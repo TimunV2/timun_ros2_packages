@@ -4,7 +4,7 @@
 <Button>        
     font_size: 24
     background_normal: ''
-    background_color: utils.get_color_from_hex('0089C7')
+    background_color: utils.get_color_from_hex('3F88C5')
 <Label>
     font_size: 24
     valign:'middle'
@@ -13,13 +13,13 @@
     valign:'middle'
 <ToggleButton>
     font_size: 24
-    background_color: {'normal':hex('18A3E6'),'down':hex('FFFD0F')}[self.state]
+    background_color: {'normal':hex('3881BC'),'down':hex('#2F6C9D')}[self.state]
     color:{'normal':hex('ffffff'),'down':hex('000000')}[self.state]
 
 <TimunLayout>
     canvas:
         Color:
-            rgba: hex("004370")
+            rgba: hex("#000000")
         Rectangle:
             pos:self.pos
             size:self.size 
@@ -32,18 +32,18 @@
             size: root.width, root.height
             BoxLayout: #=============================================== Control
                 orientation:'vertical' 
-                size_hint:(.05,1)
+                size_hint:(.1,1)
                 # spacing: 5
                 padding:(5,5,5,5)
                 canvas:
                     Color:
-                        rgba: hex("005C99")
+                        rgba: hex("#032B43")
                     Rectangle:
                         pos:self.pos
                         size:self.size
                 BoxLayout:
                     orientation:'vertical'
-                    size_hint_y:.05675
+                    size_hint_y:.0345
                     spacing:5
                     Button:
                         text:'Settings'
@@ -61,60 +61,15 @@
                 BoxLayout:
                     orientation:'vertical'
                     size_hint_y:.8
-                    # spacing:5
+                    spacing:5
                     padding:(0,5,0,0)
                     BoxLayout:
                         orientation:'vertical'
-                        size_hint_y:.2
+                        size_hint_y:.075
                         spacing:5
                         canvas:
                             Color:
-                                rgba: hex("004370")
-                            Rectangle:
-                                pos:self.pos
-                                size:self.size
-                        Label:
-                            text:'CONTROL\nMODE'
-                            font_size: 16
-                            color:hex('000000')
-                            text_size:self.size
-                            halign:'center'
-                            size_hint_y:.25
-                            canvas.before:
-                                Color:
-                                    rgba: hex("C75D00")
-                                Rectangle:
-                                    pos:self.pos
-                                    size:self.size  
-                        BoxLayout:
-                            orientation:'vertical'
-                            size_hint_y:0.75
-                            spacing: 5
-                            padding:(5,0,5,5)
-                            ToggleButton:
-                                id:modeM
-                                text:'Manual'
-                                font_size:14
-                                on_press:root.mode_m()
-                            ToggleButton:
-                                id:modeS
-                                font_size:14
-                                text:'Stabilize'
-                                on_press:root.mode_s()                    
-                            ToggleButton:
-                                id:modeD
-                                font_size:14
-                                text:'Alt-Hold'
-                                text_size:self.size
-                                halign:'center'
-                                on_press:root.mode_d()      
-                    BoxLayout:
-                        orientation:'vertical'
-                        size_hint_y:.2
-                        spacing:5
-                        canvas:
-                            Color:
-                                rgba: hex("004370")
+                                rgba: hex("#184362")
                             Rectangle:
                                 pos:self.pos
                                 size:self.size
@@ -124,16 +79,16 @@
                             color:hex('000000')
                             text_size:self.size
                             halign:'center'
-                            size_hint_y:.25
+                            size_hint_y:.4
                             canvas.before:
                                 Color:
-                                    rgba: hex("C75D00")
+                                    rgba: hex("21BF7D")
                                 Rectangle:
                                     pos:self.pos
                                     size:self.size
                         BoxLayout:
-                            orientation:'vertical'
-                            size_hint_y:.75
+                            orientation:'horizontal'
+                            size_hint_y:.6
                             spacing: 5
                             padding:(5,0,5,5)
                             ToggleButton:
@@ -217,11 +172,187 @@
                     #                     size:self.size     
                     BoxLayout:
                         orientation:'vertical'
-                        size_hint_y:.2
+                        size_hint_y:.3
                         spacing:5
                         canvas:
                             Color:
-                                rgba: hex("004370")
+                                rgba: hex("#184362")
+                            Rectangle:
+                                pos:self.pos
+                                size:self.size
+                        Label:
+                            text:'OPERATION MODE'
+                            color:hex('000000')
+                            text_size:self.size
+                            font_size:16
+                            multiline:True
+                            halign:'center'
+                            size_hint_y:.1
+                            canvas.before:
+                                Color:
+                                    rgba: hex("21BF7D")
+                                Rectangle:
+                                    pos:self.pos
+                                    size:self.size              
+                        BoxLayout:
+                            orientation:'vertical'
+                            size_hint_y:.3
+                            spacing: 5
+                            padding:(5,0,5,0)
+                            Label:
+                                text:"Pipe Following"
+                                font_size: 16
+                                halign:'center'
+                                canvas.before:
+                                    Color:
+                                        rgba: hex("#032B43")
+                                    Rectangle:
+                                        pos:self.pos
+                                        size:self.size
+                            BoxLayout:
+                                orientation:'horizontal'
+                                spacing: 5
+                                ToggleButton:
+                                    id:pipeO
+                                    text:"Orientation"
+                                    font_size: 16
+                                    on_press:root.objective(root.ids.pipeO.state,"Orientation","Pipe")
+                                ToggleButton:
+                                    id:pipeT
+                                    text:"Thrust"
+                                    font_size: 16
+                                    on_press:root.objective(root.ids.pipeT.state,"Throtle","Pipe")
+                        BoxLayout:
+                            orientation:'vertical'
+                            size_hint_y:.3
+                            spacing:5
+                            padding:(5,0,5,0)
+                            Label:
+                                multiline:True
+                                text:"Obstacel Avoidance"
+                                font_size: 16
+                                halign:'center'
+                                canvas.before:
+                                    Color:
+                                        rgba: hex("#032B43")
+                                    Rectangle:
+                                        pos:self.pos
+                                        size:self.size
+                            BoxLayout:
+                                orientation:'horizontal'
+                                spacing: 5
+                                ToggleButton:
+                                    id:oaO
+                                    text:"Orientation"
+                                    font_size: 16
+                                    on_press:root.objective(root.ids.oaO.state,"Orientation","Obstacle Avoidance")
+                                ToggleButton:
+                                    id:oaT
+                                    text:"Thrust"
+                                    font_size: 16
+                                    on_press:root.objective(root.ids.oaT.state,"Throtle","Obstacle Avoidance")
+                        BoxLayout:
+                            orientation:'vertical'
+                            size_hint_y:.4
+                            spacing: 5
+                            padding:(5,0,5,5)
+                            Label:
+                                multiline:True
+                                size_hint_y:.3
+                                text:"Visual Odometry"
+                                font_size: 16
+                                halign:'center'
+                                canvas.before:
+                                    Color:
+                                        rgba: hex("#032B43")
+                                    Rectangle:
+                                        pos:self.pos
+                                        size:self.size
+                            BoxLayout:
+                                orientation:'horizontal'
+                                size_hint_y:.7
+                                spacing:5
+                                ToggleButton:
+                                    id:VO
+                                    text:"Calc. VO"
+                                    multiline:True
+                                    font_size: 16
+                                    halign:'center'
+                                    size_hint_x:.5
+                                BoxLayout:
+                                    orientation:'vertical'
+                                    size_hint_x:.5
+                                    spacing:5
+                                    BoxLayout:
+                                        orientation:'horizontal'
+                                        canvas.before:
+                                            Color:
+                                                rgba: hex("#032B43")
+                                            Rectangle:
+                                                pos:self.pos
+                                                size:self.size
+                                        Label:
+                                            size_hint_x:.2
+                                            font_size: 14
+                                            text:'X :'      
+                                        Label:
+                                            size_hint_x:.6
+                                            font_size: 14
+                                            id:VOx
+                                            text:'%' 
+                                        Label:
+                                            size_hint_x:.2
+                                            font_size: 14
+                                            text:'m' 
+                                    BoxLayout:
+                                        orientation:'horizontal'
+                                        canvas.before:
+                                            Color:
+                                                rgba: hex("#032B43")
+                                            Rectangle:
+                                                pos:self.pos
+                                                size:self.size
+                                        Label:
+                                            size_hint_x:.2
+                                            font_size: 14
+                                            text:'Y :'      
+                                        Label:
+                                            size_hint_x:.6
+                                            font_size: 14
+                                            id:VOy
+                                            text:'%'  
+                                        Label:
+                                            size_hint_x:.2
+                                            font_size: 14
+                                            text:'m'    
+                                    BoxLayout:
+                                        orientation:'horizontal'
+                                        canvas.before:
+                                            Color:
+                                                rgba: hex("#032B43")
+                                            Rectangle:
+                                                pos:self.pos
+                                                size:self.size
+                                        Label:
+                                            size_hint_x:.2
+                                            font_size: 14
+                                            text:'Z :'      
+                                        Label:
+                                            size_hint_x:.6
+                                            font_size: 14
+                                            id:VOz
+                                            text:'%'  
+                                        Label:
+                                            size_hint_x:.2
+                                            font_size: 14
+                                            text:'m'
+                    BoxLayout:
+                        orientation:'vertical'
+                        size_hint_y:.075
+                        spacing:5
+                        canvas:
+                            Color:
+                                rgba: hex("#184362")
                             Rectangle:
                                 pos:self.pos
                                 size:self.size
@@ -231,16 +362,16 @@
                             text_size:self.size
                             halign:'center'
                             font_size:16
-                            size_hint_y:.25
+                            size_hint_y:.5
                             canvas.before:
                                 Color:
-                                    rgba: hex("C75D00")
+                                    rgba: hex("21BF7D")
                                 Rectangle:
                                     pos:self.pos
                                     size:self.size  
                         BoxLayout:
-                            orientation:'vertical'
-                            size_hint_y:.75
+                            orientation:'horizontal'
+                            size_hint_y:.5
                             spacing: 5
                             padding:(5,0,5,5)
                             ToggleButton:
@@ -255,13 +386,14 @@
                                 on_press:root.camF_btn()
                     BoxLayout:
                         orientation:'vertical'
-                        size_hint_y:.525
+                        size_hint_y:.4
+                        spacing:5    
                     BoxLayout:
-                        orientation:'vertical'
-                        size_hint_y:.075
+                        orientation:'horizontal'
+                        size_hint_y:.05
                         canvas:
                             Color:
-                                rgba: hex("004370")
+                                rgba: hex("215A84")
                             Rectangle:
                                 pos:self.pos
                                 size:self.size
@@ -270,193 +402,60 @@
                             text_size:self.size
                             halign:'left'
                             font_size:14
-                            padding:(5,0,0,0)
+                            padding:(10,0,0,0)
                         Label:
                             id:runtime
                             text:'HH:mm:dd'
                             text_size:self.size
                             halign:'left'
                             font_size:14
-                            padding:(5,0,0,0)
+                            # padding:(5,0,0,0)
                     
                 
             BoxLayout: #=========================================
                 orientation:'vertical'
-                size_hint:(.95,1)
+                size_hint:(.9,1)
                 BoxLayout:
                     orientation:'horizontal'
-                    size_hint_y:.075
+                    size_hint_y:.05
                     spacing:5
                     padding:(0,5,5,5)
                     canvas:
                         Color:
-                            rgba: hex("005C99")
+                            rgba: hex("032B43")
                         Rectangle:
                             pos:self.pos
                             size:self.size
+                    
                     BoxLayout:
                         orientation:'horizontal'
-                        size_hint_x:.4
+                        size_hint_x:.2
                         spacing:5
-                        canvas:
-                            Color:
-                                rgba: hex("004370")
-                            Rectangle:
-                                pos:self.pos
-                                size:self.size
                         Label:
-                            text:'OPERATION\nMODE'
-                            color:hex('000000')
-                            text_size:self.size
-                            font_size:16
-                            multiline:True
+                            id:arm
+                            text:"Arm"
+                            font_size: 16
                             halign:'center'
-                            size_hint_x:.025
+                            size_hint_x:.5
                             canvas.before:
                                 Color:
-                                    rgba: hex("C75D00")
+                                    rgba: hex("215A84")
                                 Rectangle:
                                     pos:self.pos
-                                    size:self.size              
-                        BoxLayout:
-                            orientation:'vertical'
-                            size_hint_x:.05
-                            spacing: 5
-                            padding:(0,5,0,5)
-                            Label:
-                                text:"Pipe Following"
-                                font_size: 16
-                                size_hint_y:.5
-                                halign:'center'
-                                canvas.before:
-                                    Color:
-                                        rgba: hex("004370")
-                                    Rectangle:
-                                        pos:self.pos
-                                        size:self.size
-                            BoxLayout:
-                                orientation:'horizontal'
-                                spacing: 5
-                                size_hint_y:.5
-                                ToggleButton:
-                                    id:pipeO
-                                    text:"Orientation"
-                                    font_size: 16
-                                    on_press:root.objective(root.ids.pipeO.state,"Orientation","Pipe")
-                                ToggleButton:
-                                    id:pipeT
-                                    text:"Thrust"
-                                    font_size: 16
-                                    on_press:root.objective(root.ids.pipeT.state,"Throtle","Pipe")
-                        BoxLayout:
-                            orientation:'vertical'
-                            size_hint_x:.05
-                            spacing:5
-                            padding:(0,5,0,5)
-                            Label:
-                                multiline:True
-                                text:"Obstacel Avoidance"
-                                font_size: 16
-                                size_hint_y:.5
-                                halign:'center'
-                                canvas.before:
-                                    Color:
-                                        rgba: hex("004370")
-                                    Rectangle:
-                                        pos:self.pos
-                                        size:self.size
-                            BoxLayout:
-                                orientation:'horizontal'
-                                size_hint_y:.5
-                                spacing: 5
-                                ToggleButton:
-                                    id:oaO
-                                    text:"Orientation"
-                                    font_size: 16
-                                    on_press:root.objective(root.ids.oaO.state,"Orientation","Obstacle Avoidance")
-                                ToggleButton:
-                                    id:oaT
-                                    text:"Thrust"
-                                    font_size: 16
-                                    on_press:root.objective(root.ids.oaT.state,"Throtle","Obstacle Avoidance")
-                        BoxLayout:
-                            orientation:'horizontal'
-                            size_hint_x:.05
-                            spacing: 5
-                            padding:(0,5,0,5)
-                            ToggleButton:
-                                id:VO
-                                text:"Visual\nOdometry"
-                                font_size: 18
-                                halign:'center'
-                                size_hint_x:.5
-                            BoxLayout:
-                                orientation:'vertical'
-                                size_hint_x:.5
-                                spacing:5
-                                BoxLayout:
-                                    orientation:'horizontal'
-                                    canvas.before:
-                                        Color:
-                                            rgba: hex("004370")
-                                        Rectangle:
-                                            pos:self.pos
-                                            size:self.size
-                                    Label:
-                                        size_hint_x:.2
-                                        font_size: 14
-                                        text:'X :'      
-                                    Label:
-                                        size_hint_x:.6
-                                        font_size: 14
-                                        id:VOx
-                                        text:'%' 
-                                    Label:
-                                        size_hint_x:.2
-                                        font_size: 14
-                                        text:'m' 
-                                BoxLayout:
-                                    orientation:'horizontal'
-                                    canvas.before:
-                                        Color:
-                                            rgba: hex("004370")
-                                        Rectangle:
-                                            pos:self.pos
-                                            size:self.size
-                                    Label:
-                                        size_hint_x:.2
-                                        font_size: 14
-                                        text:'Y :'      
-                                    Label:
-                                        size_hint_x:.6
-                                        font_size: 14
-                                        id:VOy
-                                        text:'%'  
-                                    Label:
-                                        size_hint_x:.2
-                                        font_size: 14
-                                        text:'m'    
-                                BoxLayout:
-                                    orientation:'horizontal'
-                                    canvas.before:
-                                        Color:
-                                            rgba: hex("004370")
-                                        Rectangle:
-                                            pos:self.pos
-                                            size:self.size
-                                    Label:
-                                        size_hint_x:.2
-                                        font_size: 14
-                                        text:'Z :'      
-                                    Label:
-                                        size_hint_x:.6
-                                        font_size: 14
-                                        id:VOz
-                                        text:'%'  
-                                    Label:
-                                        size_hint_x:.2
-                                        font_size: 14
-                                        text:'m'   
+                                    size:self.size
+                        Label:
+                            id:sub_mode
+                            text:"Sub_Mode"
+                            font_size: 16
+                            halign:'center'
+                            size_hint_x:.5
+                            canvas.before:
+                                Color:
+                                    rgba: hex("215A84")
+                                Rectangle:
+                                    pos:self.pos
+                                    size:self.size
+
                     BoxLayout:
                         orientation:'horizontal'
                         size_hint_x:.4
@@ -467,7 +466,7 @@
                             size_hint_x: .1
                             canvas.before:
                                 Color:
-                                    rgba: hex("C75D00")
+                                    rgba: hex("21BF7D")
                                 Rectangle:
                                     pos:self.pos
                                     size:self.size
@@ -493,20 +492,53 @@
                                         pos:self.pos
                                         size:self.size
                     Label:
-                        text:'~ TIMUN V2 GUI ~'
+                        text:'~ HA/ROV GUI ~'
                         color:hex('000000')
                         size_hint_x:.2
                         canvas.before:
                             Color:
-                                rgba: hex("18A3E6")
+                                rgba: hex("21BF7D")
                             Rectangle:
                                 pos:self.pos
                                 size:self.size
+                    BoxLayout:
+                        orientation:'horizontal'
+                        size_hint_x:.075
+                        padding:(0,5,0,5)
+                        canvas.before:
+                            Color:
+                                rgba: hex("21BF7D")
+                            Rectangle:
+                                pos:self.pos
+                                size:self.size
+                        Image:
+                            id:its
+                            size_hint_x:.3
+                            allow_stretch:True
+                            keep_ratio:True
+                        Image:
+                            id:tekpal
+                            size_hint_x:.3
+                            allow_stretch:False
+                            keep_ratio:True
+                        Image:
+                            id:elektro
+                            size_hint_x:.3
+                            allow_stretch:False
+                            keep_ratio:True
                 Image:
-                    size_hint_y:.925
+                    size_hint_y:.95
                     id:cam_main
                     allow_stretch:True
                     keep_ratio:True
+                    canvas.before:
+                        PushMatrix
+                        Rotate:
+                            # angle: 15
+                            angle: 180
+                            origin: self.center
+                    canvas.after:
+                        PopMatrix
                     # size: (self.parent.width/2,self.parent.height)
         
     FloatLayout:
@@ -612,7 +644,7 @@
                     id: depth_actual
                     halign:'left'
                     text: "%"
-                    font_size: 14
+                    font_size: 12
             BoxLayout:
                 orientation:'horizontal'
                 spacing:5
@@ -642,18 +674,20 @@
             text:'yaw'
             size_hint:(.2,.05)
             pos_hint:{'center_x':.5,'center_y':.9}
-        Label:
-            text:'v'
-            size_hint:(.2,.05)
-            halign:'center'
-            pos_hint:{'center_x':.5,'center_y':.92}
+        # Label:
+        #     text:'v'
+        #     size_hint:(None,None)
+        #     size: (50,50)
+        #     halign:'center'
+        #     pos_hint:{'center_x':.5,'center_y':.92}
         BoxLayout:
             id:pitch
             orientation:'vertical'
             pos_hint:{'center_x':.95,'center_y':.825}
         Image:
             id:roll
-            size_hint_y:.15
+            size_hint:(None,None)
+            size: (152,152)
             keep_ratio:True
             pos_hint:{'center_x':.95,'center_y':.825}
             canvas.before:

@@ -1,4 +1,5 @@
 import rclpy
+import sys
 import cv2
 import os
 import numpy as np
@@ -17,15 +18,17 @@ from kivy.uix.image import Image as KivyImage
 from io import BytesIO
 from PIL import Image as PILImage
 from kivy.graphics.texture import Texture
-from timunv2_interfaces.msg import GuiUtilities, SetPoint, SensorData
+from timunv2_interfaces.msg import GuiUtilities, SetPoint, SensorData, JoyUtilities
 from kivy.core.window import Window
 from sensor_msgs.msg import Image
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.popup import Popup
+from kivy.config import Config
 from cv_bridge import CvBridge
 
+
 cur_dir = os.path.dirname(os.path.realpath(__file__))
-CONF =  os.path.join(cur_dir,'..','config','params.yaml')
+CONF =  os.path.join(cur_dir,'..','..','timunv2_bringup','config','pidparams.yaml')
 SHARE = os.path.join(cur_dir,'..','share')
 GUI_KIVY = os.path.join(cur_dir,'..','config','hud.kv')
 Builder.load_file(GUI_KIVY)
@@ -42,15 +45,24 @@ class GuiNode(Node):
         self.bat_rob = 999
         self.camF = None
         self.camB = None
-        self.publisher_des= self.create_publisher(SetPoint,"/desired_gui",10)
-        self.publisher_gui= self.create_publisher(GuiUtilities,"/gui_cmd",10)
-        self.subscription = self.create_subscription(SensorData,'/rpy',
+        self.arm_hw = False
+        self.arm_sw = False
+        self.mov_mode = 0
+        self.publisher_des= self.create_publisher(SetPoint,"/gui_set_point",10)
+        self.publisher_gui= self.create_publisher(GuiUtilities,"/gui_utl",10)
+        self.subscription = self.create_subscription(SensorData,'/serial_sensor_data',
                                                      self.listener_callback,10)
-        self.subscription2 = self.create_subscription(Image, '/webcam/camera', 
+        self.subscription2 = self.create_subscription(Image, '/camera_front', 
                                                 self.listener_camF, 10)
+        self.status_sub     = self.create_subscription(JoyUtilities,"/joy_cmd_utl",
+                                                       self.status_callback, 10)
         self.subscription
         self.subscription2
         self.cv_bridge = CvBridge()
+    def status_callback(self,msg):
+        self.arm_hw     = msg.arm_hw
+        self.arm_sw     = msg.arm_sw
+        self.mov_mode   = msg.move_mode
     def listener_callback(self,msg):
             self.roll = msg.imu_yaw
             self.pitch = msg.imu_pitch
@@ -65,7 +77,7 @@ class GuiNode(Node):
     def listener_camB(self,msg):
             self.camB =self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
     def send_var(self):
-            return self.roll,self.pitch,self.yaw,self.depth,self.range,self.bat_nuc,self.bat_rob,self.camF,self.camB
+            return self.roll,self.pitch,self.yaw,self.depth,self.range,self.bat_nuc,self.bat_rob,self.camF,self.camB,self.arm_hw,self.arm_sw,self.mov_mode
 
 class TimunLayout(Widget):
     actual_roll = NumericProperty()
@@ -77,12 +89,17 @@ class TimunLayout(Widget):
         super(TimunLayout,self).__init__(**kwargs)
         self.node = GuiNode()
         logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s')
+        Window.maximize()
+        print(str(Window.size))
         with self.ids.pitch.canvas:
             Color(0,0,0,0)
             Rectangle(pos=self.pos, size=Window.size)
-        with self.ids.yaw.canvas:
-            Color(0,0,0,0)
-            Rectangle(pos=self.pos, size=Window.size)
+        # with self.ids.yaw.canvas:
+        #     Color(0,0,0,0)
+        #     Rectangle(pos=self.pos, size=Window.size)
+        Config.set('kivy', 'exit_on_escape', '0')
+        Config.write()
+
         self.start_timestamp = datetime.now()
         self.count_cam = 0
         self.count_com = 0
@@ -91,26 +108,31 @@ class TimunLayout(Widget):
         self.actual_yaw = 0
         self.lumen = 0
         self.logs = ''
-        self.ids.modeM.state ="down"
         self.ids.throtleB.state ="down"
         self.ids.camF_btn.state ='down'
 
-        self.pitch_x = 1920*.95 - self.ids.roll.width/2
-        self.pitch_y = 1136*.825- self.ids.roll.height/2
+        self.pitch_x = (Window.size[0]*.95) - (self.ids.roll.size[1]/2)
+        self.pitch_y = (Window.size[1]*.825)- (self.ids.roll.size[0]/2)
+        self.yaw_x = (Window.size[0]*.5) - 100
+        self.yaw_y = (Window.size[1]*.86)
+        print(self.pitch_x,self.pitch_y)
         self.ids.cam_main.source = os.path.join(SHARE,'camF.jpg')
         self.ids.roll.source = os.path.join(SHARE,'roll.png')
+        self.ids.its.source = os.path.join(SHARE,'1.png')
+        self.ids.tekpal.source = os.path.join(SHARE,'2.png')
+        self.ids.elektro.source = os.path.join(SHARE,'3.png')
         self.camF = None
         self.camB = None
         self.show = Settings()
+
         self.setting_popup = Popup(title="Settings", content=self.show, 
                             size_hint=(None,None), size=(800,800))
         logging.getLogger().addHandler(LogUpdateHandler(self))
-        Clock.schedule_interval(self.update,0.05)
+        Clock.schedule_interval(self.update,0.03)
 
     def update(self,dt):
         rclpy.spin_once(self.node, timeout_sec=0.05)
-        r,p,y,d,ra,bat_n,bat_r,camF,camB = self.node.send_var()
-        
+        r,p,y,d,ra,bat_n,bat_r,camF,camB,arm_hw,arm_sw,mov_mode = self.node.send_var()
         if(self.ids.camF_btn.state == 'down'):
             cam = camF
         elif(self.ids.camB_btn.state == 'down'):
@@ -133,13 +155,25 @@ class TimunLayout(Widget):
             self.ids.yaw_actual.text =f"{y}'"
             self.ids.depth_actual.text =f"{d} m"
             self.ids.range_actual.text =f"{ra} m"
-            self.ids.bat_nuc.text =f"{bat_n}%"
-            self.ids.bat_robot.text =f"{bat_r}%"
+            # self.ids.bat_nuc.text =f"{bat_n}%"
+            # self.ids.bat_robot.text =f"{bat_r}%"
         else:
             self.count_com += 1
             if self.count_com == 200:
                 logging.debug("Trying Connect to Communication...")
                 self.count_com = 0
+        if arm_sw == True:
+            self.ids.arm.text = "Armed"
+        else:
+            self.ids.arm.text = "Disarmed"
+        if mov_mode == 1:
+            self.ids.sub_mode.text = "Stabilize"
+        elif mov_mode == 2:
+            self.ids.sub_mode.text = "Depth-Hold"
+        elif mov_mode == 3:
+            self.ids.sub_mode.text = "Depth-Stabilize"
+        else:
+            self.ids.sub_mode.text = "Manual"
         self.update_gauge()
         self.current_timestamp = datetime.now()
         self.runtime = (self.current_timestamp - self.start_timestamp)
@@ -156,13 +190,12 @@ class TimunLayout(Widget):
         msg1 = GuiUtilities()
         # msg1.mode_orientation = check_toggle(self.ids.modeO.state)
         # msg1.mode_depth = check_toggle(self.ids.modeD.state)
-        msg1.mode_auto = check_control(self)
-        msg1.mode_pipe = check_obj(self.ids.pipeO.state, self.ids.pipeT.state)
-        msg1.mode_oa = check_obj(self.ids.oaO.state, self.ids.oaT.state)
-        msg1.mode_map = check_toggle(self.ids.VO.state)
+        msg1.vo_mode = check_toggle(self.ids.VO.state)
+        msg1.pipe_mode = check_obj(self.ids.pipeO.state, self.ids.pipeT.state)
+        msg1.oa_mode = check_obj(self.ids.oaO.state, self.ids.oaT.state)
         # msg1.record = check_toggle(self.ids.record.state)
         # msg1.calibration = check_toggle(self.ids.calibration.state)
-        msg1.mode_throtle = check_throtle(self)
+        msg1.throtle_mode = check_throtle(self)
         msg1.lumen = check_lumen(self)
         self.node.publisher_gui.publish(msg1)
     
@@ -175,69 +208,56 @@ class TimunLayout(Widget):
     def update_gauge(self):
         with self.ids.pitch.canvas:
             pos_pitch = [self.pitch_x,self.pitch_y]
+            pos_pitch_utl = [self.pitch_x,self.pitch_y+int(self.actual_pitch)]
             StencilPush()
             Color(1,1,1,1)
             # Ellipse(pos=[self.pos[0]+1747,self.pos[1]+763],size=(152,152))
             Ellipse(pos=pos_pitch,size=(152,152))
             StencilUse()
-            Rectangle(source=os.path.join(SHARE,'pitch_1.png'),pos=pos_pitch,size=(152,152))
+            Rectangle(source=os.path.join(SHARE,'pitch_1.png'),pos=pos_pitch_utl,size=(152,152))
             StencilPop()
-        with self.ids.yaw.canvas:
-            StencilPush()
-            Color(1,1,1,.3)
-            Rectangle(pos=[self.pos[0]+864,self.pos[1]+874],size=(192,51))
-            StencilUse()
-            Rectangle(source=os.path.join(SHARE,'yaw.png'),pos=[self.pos[0]+864,self.pos[1]+874],size=(384,51))
-            StencilPop()
-            
+
     def open_setting(self):
         with open(CONF,'r') as f:
             self.config = yaml.safe_load(f)
-            self.show.ids.kproll.text = f"{self.config['roll']['kp']}"
-            self.show.ids.kiroll.text = f"{self.config['roll']['ki']}"
-            self.show.ids.kdroll.text = f"{self.config['roll']['kd']}"
+            self.show.ids.kproll.text  = f"{self.config['serial_node']['pid_parameters']['kp_roll']}"
+            self.show.ids.kiroll.text  = f"{self.config['serial_node']['pid_parameters']['ki_roll']}"
+            self.show.ids.kdroll.text  = f"{self.config['serial_node']['pid_parameters']['kd_roll']}"
+            self.show.ids.kppitch.text = f"{self.config['serial_node']['pid_parameters']['kp_pitch']}"
+            self.show.ids.kipitch.text = f"{self.config['serial_node']['pid_parameters']['ki_pitch']}"
+            self.show.ids.kdpitch.text = f"{self.config['serial_node']['pid_parameters']['kd_pitch']}"
+            self.show.ids.kpyaw.text   = f"{self.config['serial_node']['pid_parameters']['kp_yaw']}"
+            self.show.ids.kiyaw.text   = f"{self.config['serial_node']['pid_parameters']['ki_yaw']}"
+            self.show.ids.kdyaw.text   = f"{self.config['serial_node']['pid_parameters']['kd_yaw']}"
+            self.show.ids.kpdepth.text = f"{self.config['serial_node']['pid_parameters']['kp_depth']}"
+            self.show.ids.kidepth.text = f"{self.config['serial_node']['pid_parameters']['ki_depth']}"
+            self.show.ids.kddepth.text = f"{self.config['serial_node']['pid_parameters']['kd_depth']}"
+            
+            self.show.ids.kppipeH.text = f"{self.config['pipeline_navigation']['pid_parameters']['kp_heading']}"
+            self.show.ids.kipipeH.text = f"{self.config['pipeline_navigation']['pid_parameters']['ki_heading']}"
+            self.show.ids.kdpipeH.text = f"{self.config['pipeline_navigation']['pid_parameters']['kd_heading']}"
+            self.show.ids.kppipeS.text = f"{self.config['pipeline_navigation']['pid_parameters']['kp_lateral']}"
+            self.show.ids.kipipeS.text = f"{self.config['pipeline_navigation']['pid_parameters']['ki_lateral']}"
+            self.show.ids.kdpipeS.text = f"{self.config['pipeline_navigation']['pid_parameters']['kd_lateral']}"
+            self.show.ids.kppipeR.text = f"{self.config['pipeline_navigation']['pid_parameters']['kp_range']}"
+            self.show.ids.kipipeR.text = f"{self.config['pipeline_navigation']['pid_parameters']['ki_range']}"
+            self.show.ids.kdpipeR.text = f"{self.config['pipeline_navigation']['pid_parameters']['kd_range']}"
 
-            self.show.ids.kppitch.text = f"{self.config['pitch']['kp']}"
-            self.show.ids.kipitch.text = f"{self.config['pitch']['ki']}"
-            self.show.ids.kdpitch.text = f"{self.config['pitch']['kd']}"
+            # self.show.ids.pipethresh.text = f"{self.config['pipe']['threshold']}"
+            # self.show.ids.pipeiou.text = f"{self.config['pipe']['iou']}"
+            
+            self.show.ids.kpoaH.text = f"{self.config['obstacle_avoidance']['pid_parameters']['kp_heading']}"
+            self.show.ids.kioaH.text = f"{self.config['obstacle_avoidance']['pid_parameters']['ki_heading']}"
+            self.show.ids.kdoaH.text = f"{self.config['obstacle_avoidance']['pid_parameters']['kd_heading']}"
+            self.show.ids.kpoaS.text = f"{self.config['obstacle_avoidance']['pid_parameters']['kp_lateral']}"
+            self.show.ids.kioaS.text = f"{self.config['obstacle_avoidance']['pid_parameters']['ki_lateral']}"
+            self.show.ids.kdoaS.text = f"{self.config['obstacle_avoidance']['pid_parameters']['kd_lateral']}"
+            self.show.ids.kpoaR.text = f"{self.config['obstacle_avoidance']['pid_parameters']['kp_range']}"
+            self.show.ids.kioaR.text = f"{self.config['obstacle_avoidance']['pid_parameters']['ki_range']}"
+            self.show.ids.kdoaR.text = f"{self.config['obstacle_avoidance']['pid_parameters']['kd_range']}"
 
-            self.show.ids.kpyaw.text = f"{self.config['yaw']['kp']}"
-            self.show.ids.kiyaw.text = f"{self.config['yaw']['ki']}"
-            self.show.ids.kdyaw.text = f"{self.config['yaw']['kd']}"
-            
-            self.show.ids.kpdepth.text = f"{self.config['depth']['kp']}"
-            self.show.ids.kidepth.text = f"{self.config['depth']['ki']}"
-            self.show.ids.kddepth.text = f"{self.config['depth']['kd']}"
-            
-            self.show.ids.kppipeH.text = f"{self.config['pipe']['heading']['kp']}"
-            self.show.ids.kipipeH.text = f"{self.config['pipe']['heading']['ki']}"
-            self.show.ids.kdpipeH.text = f"{self.config['pipe']['heading']['kd']}"
-            
-            self.show.ids.kppipeS.text = f"{self.config['pipe']['surge']['kp']}"
-            self.show.ids.kipipeS.text = f"{self.config['pipe']['surge']['ki']}"
-            self.show.ids.kdpipeS.text = f"{self.config['pipe']['surge']['kd']}"
-            
-            self.show.ids.kppipeR.text = f"{self.config['pipe']['range']['kp']}"
-            self.show.ids.kipipeR.text = f"{self.config['pipe']['range']['ki']}"
-            self.show.ids.kdpipeR.text = f"{self.config['pipe']['range']['kd']}"
-
-            self.show.ids.pipethresh.text = f"{self.config['pipe']['threshold']}"
-            self.show.ids.pipeiou.text = f"{self.config['pipe']['iou']}"
-            
-            self.show.ids.kpoaH.text = f"{self.config['oa']['heading']['kp']}"
-            self.show.ids.kioaH.text = f"{self.config['oa']['heading']['ki']}"
-            self.show.ids.kdoaH.text = f"{self.config['oa']['heading']['kd']}"
-            
-            self.show.ids.kpoaS.text = f"{self.config['oa']['surge']['kp']}"
-            self.show.ids.kioaS.text = f"{self.config['oa']['surge']['ki']}"
-            self.show.ids.kdoaS.text = f"{self.config['oa']['surge']['kd']}"
-            
-            self.show.ids.kpoaR.text = f"{self.config['oa']['range']['kp']}"
-            self.show.ids.kioaR.text = f"{self.config['oa']['range']['ki']}"
-            self.show.ids.kdoaR.text = f"{self.config['oa']['range']['kd']}"
-
-            self.show.ids.oathresh.text = f"{self.config['oa']['threshold']}"
-            self.show.ids.oaiou.text = f"{self.config['oa']['iou']}"
+            # self.show.ids.oathresh.text = f"{self.config['oa']['threshold']}"
+            # self.show.ids.oaiou.text = f"{self.config['oa']['iou']}"
         self.setting_popup.open()
     def throtle_p(self):
         if self.ids.throtleP.state == "normal":
@@ -273,14 +293,23 @@ class TimunLayout(Widget):
             self.ids.modeS.state ="normal"
             self.ids.modeD.state ="normal"
             self.ids.modeM.state ="down"
-
+    def mode_m(self):
+        if self.ids.modeM.state == "down":
+            self.ids.modeS.state ="normal"
+            self.ids.modeD.state ="normal"
+            logging.debug('Update Control Mode to Manual')
+        else:
+            logging.debug('Update Control Mode to Manual')
+            self.ids.modeS.state ="normal"
+            self.ids.modeD.state ="normal"
+            self.ids.modeM.state ="down"
     def mode_s(self):
         if self.ids.modeS.state == "down":
             self.ids.modeM.state ="normal"
             self.ids.modeD.state ="normal"
-            logging.debug('Update Control Mode to Manual')
+            logging.debug('Update Control Mode to Stabilize')
         else:
-            logging.debug('Update Control Mode to Auto')
+            logging.debug('Update Control Mode to Manual')
             self.ids.modeM.state ="down"
             self.ids.modeS.state ="normal"
             self.ids.modeD.state ="normal"
@@ -288,17 +317,17 @@ class TimunLayout(Widget):
         if self.ids.modeD.state == "down":
             self.ids.modeM.state ="normal"
             self.ids.modeS.state ="normal"
-            logging.debug('Update Control Mode to Manual')
+            logging.debug('Update Control Mode to Depth-Hold')
         else:
-            logging.debug('Update Control Mode to Auto')
+            logging.debug('Update Control Mode to Manual')
             self.ids.modeM.state ="down"
             self.ids.modeS.state ="normal"
             self.ids.modeD.state ="normal"
-    def stabilization(self,var,text):
-        if var == 'down':
-            logging.debug(f'Update {text} Mode to Stabilization')
-        else:
-            logging.debug(f'Update {text} Mode to Manual')
+    # def stabilization(self,var,text):
+    #     if var == 'down':
+    #         logging.debug(f'Update {text} Mode to Stabilization')
+    #     else:
+    #         logging.debug(f'Update {text} Mode to Manual')
     def objective(self,var,text,text2):
         if var == 'down':
             logging.debug(f'Switch {text} Reference to {text2} Mission')
@@ -332,51 +361,44 @@ class Settings(FloatLayout):
     def save_conf(self):
         with open(CONF,'r') as f:
             self.config = yaml.safe_load(f)
-            self.config['roll']['kp'] = int(self.ids.kproll.text)
-            self.config['roll']['ki'] = int(self.ids.kiroll.text)
-            self.config['roll']['kd'] = int(self.ids.kdroll.text)
+            self.config['serial_node']['pid_parameters']['kp_roll']             = float(self.ids.kproll.text)
+            self.config['serial_node']['pid_parameters']['ki_roll']             = float(self.ids.kiroll.text)
+            self.config['serial_node']['pid_parameters']['kd_roll']             = float(self.ids.kdroll.text)
+            self.config['serial_node']['pid_parameters']['kp_pitch']            = float(self.ids.kppitch.text)
+            self.config['serial_node']['pid_parameters']['ki_pitch']            = float(self.ids.kipitch.text)
+            self.config['serial_node']['pid_parameters']['kd_pitch']            = float(self.ids.kdpitch.text)
+            self.config['serial_node']['pid_parameters']['kp_yaw']              = float(self.ids.kpyaw.text)
+            self.config['serial_node']['pid_parameters']['ki_yaw']              = float(self.ids.kiyaw.text)
+            self.config['serial_node']['pid_parameters']['kd_yaw']              = float(self.ids.kdyaw.text)
+            self.config['serial_node']['pid_parameters']['kp_depth']            = float(self.ids.kpdepth.text)
+            self.config['serial_node']['pid_parameters']['ki_depth']            = float(self.ids.kidepth.text)
+            self.config['serial_node']['pid_parameters']['kd_depth']            = float(self.ids.kddepth.text)
+            
+            self.config['pipeline_navigation']['pid_parameters']['kp_heading']  = float(self.ids.kppipeH.text)
+            self.config['pipeline_navigation']['pid_parameters']['ki_heading']  = float(self.ids.kipipeH.text)
+            self.config['pipeline_navigation']['pid_parameters']['kd_heading']  = float(self.ids.kdpipeH.text)
+            self.config['pipeline_navigation']['pid_parameters']['kp_lateral']  = float(self.ids.kppipeS.text)
+            self.config['pipeline_navigation']['pid_parameters']['ki_lateral']  = float(self.ids.kipipeS.text)
+            self.config['pipeline_navigation']['pid_parameters']['kd_lateral']  = float(self.ids.kdpipeS.text)
+            self.config['pipeline_navigation']['pid_parameters']['kp_range']    = float(self.ids.kppipeR.text)
+            self.config['pipeline_navigation']['pid_parameters']['ki_range']    = float(self.ids.kipipeR.text)
+            self.config['pipeline_navigation']['pid_parameters']['kd_range']    = float(self.ids.kdpipeR.text)
 
-            self.config['pitch']['kp'] = int(self.ids.kppitch.text)
-            self.config['pitch']['ki'] = int(self.ids.kipitch.text)
-            self.config['pitch']['kd'] = int(self.ids.kdpitch.text)
+            # self.config['pipe']['threshold'] = int(self.ids.pipethresh.text)
+            # self.config['pipe']['iou'] = int(self.ids.pipeiou.text)
 
-            self.config['yaw']['kp'] = int(self.ids.kpyaw.text)
-            self.config['yaw']['ki'] = int(self.ids.kiyaw.text)
-            self.config['yaw']['kd'] = int(self.ids.kdyaw.text)
+            self.config['obstacle_avoidance']['pid_parameters']['kp_heading']   = float(self.ids.kpoaH.text)
+            self.config['obstacle_avoidance']['pid_parameters']['ki_heading']   = float(self.ids.kioaH.text)
+            self.config['obstacle_avoidance']['pid_parameters']['kd_heading']   = float(self.ids.kdoaH.text)
+            self.config['obstacle_avoidance']['pid_parameters']['kp_lateral']   = float(self.ids.kpoaS.text)
+            self.config['obstacle_avoidance']['pid_parameters']['ki_lateral']   = float(self.ids.kioaS.text)
+            self.config['obstacle_avoidance']['pid_parameters']['kd_lateral']   = float(self.ids.kdoaS.text)
+            self.config['obstacle_avoidance']['pid_parameters']['kp_range']     = float(self.ids.kpoaR.text)
+            self.config['obstacle_avoidance']['pid_parameters']['ki_range']     = float(self.ids.kioaR.text)
+            self.config['obstacle_avoidance']['pid_parameters']['kd_range']     = float(self.ids.kdoaR.text)
 
-            self.config['depth']['kp'] = int(self.ids.kpdepth.text)
-            self.config['depth']['ki'] = int(self.ids.kidepth.text)
-            self.config['depth']['kd'] = int(self.ids.kddepth.text)
-
-            self.config['pipe']['heading']['kp'] = int(self.ids.kppipeH.text)
-            self.config['pipe']['heading']['ki'] = int(self.ids.kipipeH.text)
-            self.config['pipe']['heading']['kd'] = int(self.ids.kdpipeH.text)
-
-            self.config['pipe']['surge']['kp'] = int(self.ids.kppipeS.text)
-            self.config['pipe']['surge']['ki'] = int(self.ids.kipipeS.text)
-            self.config['pipe']['surge']['kd'] = int(self.ids.kdpipeS.text)
-
-            self.config['pipe']['range']['kp'] = int(self.ids.kppipeR.text)
-            self.config['pipe']['range']['ki'] = int(self.ids.kipipeR.text)
-            self.config['pipe']['range']['kd'] = int(self.ids.kdpipeR.text)
-
-            self.config['pipe']['threshold'] = int(self.ids.pipethresh.text)
-            self.config['pipe']['iou'] = int(self.ids.pipeiou.text)
-
-            self.config['oa']['heading']['kp'] = int(self.ids.kpoaH.text)
-            self.config['oa']['heading']['ki'] = int(self.ids.kioaH.text)
-            self.config['oa']['heading']['kd'] = int(self.ids.kdoaH.text)
-
-            self.config['oa']['surge']['kp'] = int(self.ids.kpoaS.text)
-            self.config['oa']['surge']['ki'] = int(self.ids.kioaS.text)
-            self.config['oa']['surge']['kd'] = int(self.ids.kdoaS.text)
-
-            self.config['oa']['range']['kp'] = int(self.ids.kpoaR.text)
-            self.config['oa']['range']['ki'] = int(self.ids.kioaR.text)
-            self.config['oa']['range']['kd'] = int(self.ids.kdoaR.text)
-
-            self.config['oa']['threshold'] = int(self.ids.oathresh.text)
-            self.config['oa']['iou'] = int(self.ids.oaiou.text)
+            # self.config['oa']['threshold'] = int(self.ids.oathresh.text)
+            # self.config['oa']['iou'] = int(self.ids.oaiou.text)
         with open(CONF,'w') as f:
             yaml.dump(self.config,f)
             logging.debug("Update YAML Configuration")
