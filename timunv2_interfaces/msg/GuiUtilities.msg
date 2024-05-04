@@ -1,4 +1,7 @@
 bool mode_vo
+bool arm_hw
+bool depthhold
+bool stabilize
 int8 mode_auto
 int8 mode_throtle
 int8 mode_pipe

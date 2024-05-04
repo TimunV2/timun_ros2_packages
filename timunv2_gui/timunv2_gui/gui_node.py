@@ -1,5 +1,6 @@
 import rclpy
 import cv2
+import sys
 import os
 import numpy as np
 import yaml
@@ -22,12 +23,14 @@ from kivy.core.window import Window
 from sensor_msgs.msg import Image
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.popup import Popup
+from kivy.config import Config
 from cv_bridge import CvBridge
 
-cur_dir = os.path.dirname(os.path.realpath(__file__))
-CONF =  os.path.join(cur_dir,'..','config','params.yaml')
-SHARE = os.path.join(cur_dir,'..','share')
-GUI_KIVY = os.path.join(cur_dir,'..','config','hud.kv')
+# cur_dir = os.path.dirname(os.path.realpath(__file__))
+cur_dir = "/home/ardiar/ws/timunv2_ws/src/timun_ros2_packages/timunv2_gui"
+CONF =  os.path.join(cur_dir,'config','params.yaml')
+SHARE = os.path.join(cur_dir,'share')
+GUI_KIVY = os.path.join(cur_dir,'config','hud.kv')
 Builder.load_file(GUI_KIVY)
 
 class GuiNode(Node):
@@ -42,30 +45,37 @@ class GuiNode(Node):
         self.bat_rob = 999
         self.camF = None
         self.camB = None
-        self.publisher_des= self.create_publisher(SetPoint,"/desired_gui",10)
-        self.publisher_gui= self.create_publisher(GuiUtilities,"/gui_cmd",10)
-        self.subscription = self.create_subscription(SensorData,'/rpy',
-                                                     self.listener_callback,10)
-        self.subscription2 = self.create_subscription(Image, '/webcam/camera', 
+        self.arm_hw = False
+        self.depthhold = False
+        # self.publisher_des= self.create_publisher(SetPoint,"/desired_gui",10)
+        self.publisher_gui= self.create_publisher(GuiUtilities,"/gui_utl",10)
+        self.subscription = self.create_subscription(SensorData,'/sensor',
+                                                    self.listener_callback,10)
+        self.subscription2 = self.create_subscription(Image, '/camera_front', 
                                                 self.listener_camF, 10)
+        self.status_sub     = self.create_subscription(GuiUtilities,"/actual_status",
+                                                       self.status_callback, 10)
         self.subscription
         self.subscription2
         self.cv_bridge = CvBridge()
+    def status_callback(self,msg):
+        self.arm_hw     = msg.arm_hw
+        self.depthhold  = msg.depthhold
     def listener_callback(self,msg):
-            self.roll = msg.imu_yaw
-            self.pitch = msg.imu_pitch
-            self.yaw = msg.imu_yaw
-            self.depth = msg.depth
-            self.range = msg.range_scan
-            self.bat_nuc = msg.battery_nuc
-            self.bat_rob = msg.battery_robot
+        self.roll = msg.imu_roll * 100 *-1
+        self.pitch = msg.imu_pitch * 100 *-1
+        self.yaw = msg.imu_yaw
+        self.depth = msg.depth
+        self.range = msg.ranges_scan
+        self.bat_nuc = msg.battery_nuc
+        self.bat_rob = msg.battery_robot
     def listener_camF(self,msg):
-            self.camF =self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-            self.camB =self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        self.camF =self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        self.camB =self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
     def listener_camB(self,msg):
-            self.camB =self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        self.camB =self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
     def send_var(self):
-            return self.roll,self.pitch,self.yaw,self.depth,self.range,self.bat_nuc,self.bat_rob,self.camF,self.camB
+        return self.roll,self.pitch,self.yaw,self.depth,self.range,self.bat_nuc,self.bat_rob,self.camF,self.camB
 
 class TimunLayout(Widget):
     actual_roll = NumericProperty()
@@ -82,9 +92,12 @@ class TimunLayout(Widget):
         with self.ids.pitch.canvas:
             Color(0,0,0,0)
             Rectangle(pos=self.pos, size=Window.size)
-        with self.ids.yaw.canvas:
-            Color(0,0,0,0)
-            Rectangle(pos=self.pos, size=Window.size)
+        # with self.ids.yaw.canvas:
+        #     Color(0,0,0,0)
+        #     Rectangle(pos=self.pos, size=Window.size)
+        Config.set('kivy', 'exit_on_escape', '0')
+        Config.write()
+        # Config.read()
         self.start_timestamp = datetime.now()
         self.count_cam = 0
         self.count_com = 0
@@ -93,7 +106,6 @@ class TimunLayout(Widget):
         self.actual_yaw = 0
         self.lumen = 0
         self.logs = ''
-        self.ids.modeM.state ="down"
         self.ids.throtleB.state ="down"
         self.ids.camF_btn.state ='down'
 
@@ -104,6 +116,9 @@ class TimunLayout(Widget):
         print(self.pitch_x,self.pitch_y)
         self.ids.cam_main.source = os.path.join(SHARE,'camF.jpg')
         self.ids.roll.source = os.path.join(SHARE,'roll.png')
+        self.ids.its.source = os.path.join(SHARE,'1.png')
+        self.ids.tekpal.source = os.path.join(SHARE,'2.png')
+        self.ids.elektro.source = os.path.join(SHARE,'3.png')
         self.camF = None
         self.camB = None
         self.show = Settings()
@@ -111,10 +126,10 @@ class TimunLayout(Widget):
         self.setting_popup = Popup(title="Settings", content=self.show, 
                             size_hint=(None,None), size=(800,800))
         logging.getLogger().addHandler(LogUpdateHandler(self))
-        Clock.schedule_interval(self.update,0.05)
+        Clock.schedule_interval(self.update,0.03)
 
     def update(self,dt):
-        rclpy.spin_once(self.node, timeout_sec=0.05)
+        rclpy.spin_once(self.node, timeout_sec=0.03)
         r,p,y,d,ra,bat_n,bat_r,camF,camB = self.node.send_var()
         if(self.ids.camF_btn.state == 'down'):
             cam = camF
@@ -123,23 +138,23 @@ class TimunLayout(Widget):
         if np.any(cam !=None):
             texture = Texture.create(size=(cam.shape[1], cam.shape[0]), colorfmt='bgr')
             texture.blit_buffer(cam.tobytes(), colorfmt='bgr', bufferfmt='ubyte')
-            self.ids.cam_gui.texture = texture
+            self.ids.cam_main.texture = texture
         else:
             self.count_cam += 1
             if self.count_cam == 200:
                 logging.debug("Trying Connect to Camera...")
                 self.count_cam = 0
         if all(x != 999 for x in [r,p,y,d,ra,bat_n,bat_r]):
-            self.actual_roll = r
-            self.actual_pitch = p
-            self.actual_yaw = y
-            self.ids.roll_actual.text =f"{r}'"
-            self.ids.pitch_actual.text =f"{p}'"
-            self.ids.yaw_actual.text =f"{y}'"
-            self.ids.depth_actual.text =f"{d} m"
+            self.actual_roll = int(r)
+            self.actual_pitch = int(p)
+            self.actual_yaw = int(y)
+            self.ids.roll_actual.text =f"{round(r,1)}'"
+            self.ids.pitch_actual.text =f"{round(p,1)}'"
+            self.ids.yaw_actual.text =f"{round(y,1)}'"
+            self.ids.depth_actual.text =f"{round(d,2)} m"
             self.ids.range_actual.text =f"{ra} m"
-            self.ids.bat_nuc.text =f"{bat_n}%"
-            self.ids.bat_robot.text =f"{bat_r}%"
+            # self.ids.bat_nuc.text =f"{bat_n}%"
+            # self.ids.bat_robot.text =f"{bat_r}%"
         else:
             self.count_com += 1
             if self.count_com == 200:
@@ -161,11 +176,10 @@ class TimunLayout(Widget):
         msg1 = GuiUtilities()
         # msg1.mode_orientation = check_toggle(self.ids.modeO.state)
         # msg1.mode_depth = check_toggle(self.ids.modeD.state)
-        msg1.mode_vo = self.ids.VO.state
-        msg1.mode_auto = check_control(self)
+        msg1.mode_vo = check_toggle(self.ids.VO.state)
         msg1.mode_pipe = check_obj(self.ids.pipeO.state, self.ids.pipeT.state)
         msg1.mode_oa = check_obj(self.ids.oaO.state, self.ids.oaT.state)
-        msg1.mode_map = check_toggle(self.ids.VO.state)
+        # msg1.mode_map = check_toggle(self.ids.VO.state)
         # msg1.record = check_toggle(self.ids.record.state)
         # msg1.calibration = check_toggle(self.ids.calibration.state)
         msg1.mode_throtle = check_throtle(self)
@@ -181,22 +195,23 @@ class TimunLayout(Widget):
     def update_gauge(self):
         with self.ids.pitch.canvas:
             pos_pitch = [self.pitch_x,self.pitch_y]
+            pos_pitch_utl = [self.pitch_x,self.pitch_y+int(self.actual_pitch)]
             StencilPush()
             Color(1,1,1,1)
             # Ellipse(pos=[self.pos[0]+1747,self.pos[1]+763],size=(152,152))
             Ellipse(pos=pos_pitch,size=(152,152))
             StencilUse()
-            Rectangle(source=os.path.join(SHARE,'pitch_1.png'),pos=pos_pitch,size=(152,152))
+            Rectangle(source=os.path.join(SHARE,'pitch_1.png'),pos=pos_pitch_utl,size=(152,152))
             StencilPop()
-        with self.ids.yaw.canvas:
-            pos_yaw = [self.yaw_x,self.yaw_y]
-            pos_head = [self.yaw_x-200,self.yaw_y]
-            StencilPush()
-            Color(1,1,1,.3)
-            Rectangle(pos=pos_yaw,size=(200,51))
-            StencilUse()
-            Rectangle(source=os.path.join(SHARE,'yaw.png'),pos=pos_head,size=(600,51))
-            StencilPop()
+        # with self.ids.yaw.canvas:
+        #     pos_yaw = [self.yaw_x,self.yaw_y]
+        #     pos_head = [self.yaw_x-200+int(self.actual_yaw),self.yaw_y]
+        #     StencilPush()
+        #     Color(1,1,1,.3)
+        #     Rectangle(pos=pos_yaw,size=(200,51))
+        #     StencilUse()
+        #     Rectangle(source=os.path.join(SHARE,'yaw.png'),pos=pos_head,size=(600,51))
+        #     StencilPop()
             
     def open_setting(self):
         with open(CONF,'r') as f:
@@ -438,16 +453,16 @@ def check_obj(state1,state2):
     else:
         check = 0
     return check
-def check_control(self):
-    if self.ids.modeM.state == 'down' :
-        check = 1
-    elif self.ids.modeS.state == 'down':
-        check = 2
-    elif self.ids.modeD.state == 'down':
-        check = 3
-    else:
-        check = 1
-    return check
+# def check_control(self):
+#     if self.ids.modeM.state == 'down' :
+#         check = 1
+#     elif self.ids.modeS.state == 'down':
+#         check = 2
+#     elif self.ids.modeD.state == 'down':
+#         check = 3
+#     else:
+#         check = 1
+#     return check
 
 def check_lumen(self):
     max = 5

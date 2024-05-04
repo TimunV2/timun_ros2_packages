@@ -1,6 +1,7 @@
 import os
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch.actions import ExecuteProcess
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
@@ -16,6 +17,22 @@ def generate_launch_description():
         executable="joy_sub_node"
     )
 
+    camera_publisher_node_front = Node(
+        package="timunv2_camera",
+        executable="camera_publisher_node",
+        arguments=["0","camera_front"]
+    )
+    camera_publisher_node_bottom = Node(
+        package="timunv2_camera",
+        executable="camera_publisher_node",
+        arguments=["1","camera_bottom"]
+    )
+
+    gui_node = ExecuteProcess(
+        cmd=[['ros2 ','run ','timunv2_gui ','gui_node']],
+        shell=True
+    )
+
     master_controller_node = Node(
         package="timunv2_controller",
         executable="master_controller"
@@ -28,6 +45,9 @@ def generate_launch_description():
 
     ld.add_action(joy_node) #to read pilot input via joy stick like button and analog sticks
     ld.add_action(joy_sub_node) #to convert button and axis to velocity and utility command
+    ld.add_action(camera_publisher_node_front) #to publish front camera
+    # ld.add_action(camera_publisher_node_bottom) #to publish front camera
+    ld.add_action(gui_node) #to open gui
     ld.add_action(master_controller_node) #to select the final output of cmd velocity and set point
     ld.add_action(serial_node) #to convert and send the data to stm, and to read sensor data
 

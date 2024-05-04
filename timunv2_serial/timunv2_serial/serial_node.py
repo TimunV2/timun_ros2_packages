@@ -1,10 +1,11 @@
 #import necessary library
 import rclpy
-from rclpy.node import Node
 import serial
 import struct
 import os
 import yaml
+from rclpy.node import Node
+from brping import Ping1D
 
 #import necessary messages
 from geometry_msgs.msg import Twist
@@ -38,6 +39,16 @@ class Serial_Node(Node):
         self.write_status_last = True
         self.read_status_now = False
         self.read_status_last = True
+
+        #BrPing
+        self.ping_port = "/dev/ttyPing"
+        self.myPing = Ping1D()
+        self.myPing.connect_serial(self.ping_port,115200)
+        self.ping_status_now = False
+        self.ping_status_last = True
+        if self.myPing.initialize() is False:
+            self.get_logger().error(f"Failed to connect Echo Sounder")
+
 
         #velocity converted          x, y, z
         self.vel_linear_converted = [0, 0, 0]
@@ -210,8 +221,17 @@ class Serial_Node(Node):
             self.read_status_now = False
             if self.read_status_now == False and self.read_status_last == True:
                 self.get_logger().error(f"Error reading serial port: {str(e)}")
-
+        try:
+            received_ping = self.myPing.get_distance()
+            if received_ping:
+                self.sensor.ranges_scan = received_ping["distance"]
+                self.sensor.confidence = received_ping["confidence"]
+            self.ping_status_now = True
+        except Exception as e:
+            if self.read_status_now == False and self.read_status_last == True:
+                self.get_logger().error(f"Error reading ping data: {str(e)}")
         self.read_status_last = self.read_status_now
+        self.ping_status_last = self.ping_status_now
         
 
     def timer_callback(self):

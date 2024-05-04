@@ -14,12 +14,14 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='tkd',
-    maintainer_email='hasandzulfadli@gmail.com',
+    maintainer_email='ardiarputra@gmail.com',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
-        'console_scripts': [
+        'console_scripts': [ 
+            "gui_node = timunv2_gui.gui_node:main"
         ],
     },
 )
+ 

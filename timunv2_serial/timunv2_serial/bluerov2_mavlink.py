@@ -6,7 +6,7 @@ import pymavlink.dialects.v20.ardupilotmega as mavlink
 
 #import necessary messages
 from geometry_msgs.msg import Twist
-from timunv2_interfaces.msg import JoyUtilities
+from timunv2_interfaces.msg import JoyUtilities, SensorData, GuiUtilities
 
 class Bluerov2_Mav(Node):
     def __init__(self):
@@ -16,6 +16,9 @@ class Bluerov2_Mav(Node):
         # Create subscriber
         self.cmd_vel_sub_ = self.create_subscription(Twist, "/master_cmd_vel", self.cmd_vel_callback, 10)
         self.cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.cmd_utl_callback, 10)
+
+        # Create publisher
+        self.sensor_pub   = self.create_publisher(SensorData,"/sensor",10)
 
         # Setup connection parameters
         self.declare_parameter("ip", "0.0.0.0") 
@@ -49,9 +52,10 @@ class Bluerov2_Mav(Node):
         self.camera_tilt        = 1500                              # The Camera Tilt channel (RC8) controls the vertical tilt movement of the camera.
         self.lights             = 1100        
 
+        self.data               = {} 
         self.arm_hw             = False
         self.arm_sw             = False
-        self.depthold          = False
+        self.depthhold          = False
 
         # Create the connection to the bluerov2
         self.connection = mavutil.mavlink_connection("udpin:" + self.bluerov_ip + ":" + str(self.bluerov_port), baudrate=self.bluerov_baudrate)        
@@ -105,6 +109,43 @@ class Bluerov2_Mav(Node):
 
         self.mav.rc_channels_override_send(*self.target, *rc_channel_values)
 
+        self.read_param()
+
+        # Publish sensor data
+        if len(self.data) != 0:
+            self.decode_param() 
+
+    def read_param(self):        
+        msgs = []
+        while True:
+            msg = self.recv_match()
+            if msg != None:
+                msgs.append(msg)
+            else:
+                break
+
+        for msg in msgs:
+            self.data[msg.get_type()] = msg.to_dict()
+
+    def decode_param(self):
+        def get_data(key):
+            if key not in self.data:
+                self.get_logger().info(f'no {key} data')
+                return None
+            return self.data[key]
+
+        def publish_attitude():
+            attitude_data = get_data('ATTITUDE')
+            msg = SensorData()
+            if attitude_data is not None:
+                msg.imu_roll, msg.imu_pitch, msg.imu_yaw = attitude_data['roll'], attitude_data['pitch'], attitude_data['yaw']
+            bar30_data = get_data('SCALED_PRESSURE2')
+            if bar30_data is not None:
+                msg.depth = bar30_data['press_abs']
+            self.sensor_pub.publish(msg)
+        publish_attitude()
+
+
     def arm(self):
         self.connection.arducopter_arm()
         self.get_logger().info('Arm requested, waiting...')
@@ -133,10 +174,10 @@ class Bluerov2_Mav(Node):
         elif msg.arm_hw == False and self.arm_hw == True:
             self.disarm()
         self.arm_hw = msg.arm_hw
-        if msg.depthhold == True and self.depthold == False:
+        if msg.depthhold == True and self.depthhold == False:
             self.set_mode(2)
             # pass
-        elif msg.depthhold == False and self.depthold == True:
+        elif msg.depthhold == False and self.depthhold == True:
             self.set_mode(19)
             # pass
         self.depthold = msg.depthhold
