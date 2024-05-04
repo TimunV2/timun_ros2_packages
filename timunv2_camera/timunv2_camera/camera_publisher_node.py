@@ -14,8 +14,8 @@ class Camera_Publisher_Node(Node):
 
         video_path = "/home/hasan/Videos/dataset1.mp4" #for using video
         self.cap = cv2.VideoCapture(video_path)
-        # self.cap = cv2.VideoCapture(0) #for using camera 0 for front, 1 for bottom
-
+        # self.cap = cv2.VideoCapture("/dev/video1") #for using camera 0 for front, 1 for bottom
+        # self.cap = cv2.VideoCapture(0) 
         if not self.cap.isOpened():
             self.get_logger().error("Failed to open the camera")
             return
@@ -26,7 +26,7 @@ class Camera_Publisher_Node(Node):
         ret, frame = self.cap.read()
         if ret:
             try:
-                frame = cv2.resize(frame, (640, 384))
+                # frame = cv2.resize(frame, (640, 384))
                 msg = self.cv_bridge.cv2_to_imgmsg(frame, "bgr8")
                 self.publisher_.publish(msg)
             except Exception as e:
