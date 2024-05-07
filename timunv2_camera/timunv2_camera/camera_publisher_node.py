@@ -15,7 +15,7 @@ class Camera_Publisher_Node(Node):
 
         # video_path = "/home/hasan/Videos/dataset1.mp4" #for using video
         # self.cap = cv2.VideoCapture(video_path)
-        self.cap = cv2.VideoCapture(int(sys.argv[1])) #for using camera 0 for front, 1 for bottom
+        self.cap = cv2.VideoCapture(sys.argv[1]) #for using camera 0 for front, 1 for bottom
         # self.cap = cv2.VideoCapture(0) #for using camera 0 for front, 1 for bottom
 
         if not self.cap.isOpened():
