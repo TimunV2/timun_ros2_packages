@@ -1,0 +1,10 @@
+bool stabilize
+bool depthhold
+bool arm_hw
+bool arm_sw
+bool vo_mode
+int8 mov_mode
+int8 throtle_mode
+int8 pipe_mode
+int8 oa_mode
+int8 lumen

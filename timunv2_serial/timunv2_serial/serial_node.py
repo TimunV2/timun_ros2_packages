@@ -22,15 +22,14 @@ class Serial_Node(Node):
         # self.pid_const_sub_ = self.create_subscription(PIDConstant, "/pid_constant", self.pid_const_callback, 10)
         #publisher
         self.joy_cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.joy_cmd_utl_callback, 10)
-        self.serial_sensor_pub_ = self.create_publisher(SensorData, "serial_sensor_data", 10)
+        self.serial_sensor_pub_ = self.create_publisher(SensorData, "/serial_sensor_data", 10)
 
         self.timer_ = self.create_timer(0.01, self.timer_callback)
 
-        self.yaml_filepath = '/home/hasan/ros2_ws/src/timunv2_bringup/config/pidparams.yaml'
+        self.yaml_filepath = '/home/tkd/ros2_ws/src/timunv2_bringup/config/pidparams.yaml'
 
         #Serial 
-        # self.port = '/dev/serial/by-id/usb-STM32_Virtual_ComPort_Љ_STMicroelectronics-if00'
-        self.port = '/dev/serial/by-id/usb-STMicroelectronics_STM32_Virtual_ComPort_356536713431-if00'
+        self.port = '/dev/ttyCDC'
         self.baudrate = 115200
         self.ser = None
         self.communication_status_now = False

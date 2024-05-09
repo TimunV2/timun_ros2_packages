@@ -1,0 +1,1208 @@
+#:import utils kivy.utils
+#:import hex kivy.utils.get_color_from_hex
+#:import Factory kivy.factory.Factory
+<Button>        
+    font_size: 24
+    background_normal: ''
+    background_color: utils.get_color_from_hex('3F88C5')
+<Label>
+    font_size: 24
+    valign:'middle'
+<TextInput>
+    font_size: 24
+    valign:'middle'
+<ToggleButton>
+    font_size: 24
+    background_color: {'normal':hex('3881BC'),'down':hex('#2F6C9D')}[self.state]
+    color:{'normal':hex('ffffff'),'down':hex('000000')}[self.state]
+
+<TimunLayout>
+    canvas:
+        Color:
+            rgba: hex("#000000")
+        Rectangle:
+            pos:self.pos
+            size:self.size 
+    AnchorLayout:
+        anchor_x: 'right'
+        anchor_y: 'center'
+        size: root.width, root.height
+        BoxLayout:
+            orientation:'horizontal'
+            size: root.width, root.height
+            BoxLayout: #=============================================== Control
+                orientation:'vertical' 
+                size_hint:(.1,1)
+                # spacing: 5
+                padding:(5,5,5,5)
+                canvas:
+                    Color:
+                        rgba: hex("#032B43")
+                    Rectangle:
+                        pos:self.pos
+                        size:self.size
+                BoxLayout:
+                    orientation:'vertical'
+                    size_hint_y:.0345
+                    spacing:5
+                    Button:
+                        text:'Settings'
+                        font_size:16
+                        on_press: root.open_setting()
+                        # Label:
+                        #     size_hint_x:.3
+                        #     text:'Connection :'
+                        #     font_size:16
+                        # Label:
+                        #     size_hint_x:.3
+                        #     id:status_connect
+                        #     text:'Disconnect'
+                        #     font_size:16
+                BoxLayout:
+                    orientation:'vertical'
+                    size_hint_y:.8
+                    spacing:5
+                    padding:(0,5,0,0)
+                    BoxLayout:
+                        orientation:'vertical'
+                        size_hint_y:.075
+                        spacing:5
+                        canvas:
+                            Color:
+                                rgba: hex("#184362")
+                            Rectangle:
+                                pos:self.pos
+                                size:self.size
+                        Label:
+                            text:'THROTLE'
+                            font_size:16
+                            color:hex('000000')
+                            text_size:self.size
+                            halign:'center'
+                            size_hint_y:.4
+                            canvas.before:
+                                Color:
+                                    rgba: hex("21BF7D")
+                                Rectangle:
+                                    pos:self.pos
+                                    size:self.size
+                        BoxLayout:
+                            orientation:'horizontal'
+                            size_hint_y:.6
+                            spacing: 5
+                            padding:(5,0,5,5)
+                            ToggleButton:
+                                id:throtleP
+                                font_size:14
+                                text:'Power'
+                                on_press:root.throtle_p()
+                            ToggleButton:
+                                id:throtleE
+                                font_size:14
+                                text:'Eco'
+                                on_press:root.throtle_e()
+                            ToggleButton:
+                                id:throtleB
+                                font_size:14
+                                text:'Balance'
+                                on_press:root.throtle_b()  
+                    # Label:
+                    #     text:"~ BATTERY ~"
+                    #     color:hex('000000')
+                    #     size_hint_y:.05
+                    #     canvas.before:
+                    #         Color:
+                    #             rgba: hex("C75D00")
+                    #         Rectangle:
+                    #             pos:self.pos
+                    #             size:self.size     
+                    # BoxLayout:
+                    #     orientation:'vertical'
+                    #     size_hint_y:.1
+                    #     spacing:5
+                    #     BoxLayout:
+                    #         orientation:'horizontal'
+                    #         size_hint_y:.5
+                    #         spacing:5
+                    #         Label:
+                    #             text:'PC'
+                    #             halign:'left'
+                    #             font_size: 16
+                    #             canvas.before:
+                    #                 Color:
+                    #                     rgba: hex("004370")
+                    #                 Rectangle:
+                    #                     pos:self.pos
+                    #                     size:self.size
+                    #         Label:
+                    #             id: bat_nuc
+                    #             halign:'center'
+                    #             text:'%'
+                    #             font_size: 16
+                    #             canvas.before:
+                    #                 Color:
+                    #                     rgba: hex("004370")
+                    #                 Rectangle:
+                    #                     pos:self.pos
+                    #                     size:self.size
+                    #     BoxLayout:
+                    #         orientation:'horizontal'
+                    #         size_hint_y:.5
+                    #         spacing:5
+                    #         Label:
+                    #             text:'ROBOT'
+                    #             halign:'left'
+                    #             font_size: 16
+                    #             canvas.before:
+                    #                 Color:
+                    #                     rgba: hex("004370")
+                    #                 Rectangle:
+                    #                     pos:self.pos
+                    #                     size:self.size
+                    #         Label:
+                    #             id: bat_robot
+                    #             halign:'center'
+                    #             text:'%'
+                    #             font_size: 16
+                    #             canvas.before:
+                    #                 Color:
+                    #                     rgba: hex("004370")
+                    #                 Rectangle:
+                    #                     pos:self.pos
+                    #                     size:self.size     
+                    BoxLayout:
+                        orientation:'vertical'
+                        size_hint_y:.3
+                        spacing:5
+                        canvas:
+                            Color:
+                                rgba: hex("#184362")
+                            Rectangle:
+                                pos:self.pos
+                                size:self.size
+                        Label:
+                            text:'OPERATION MODE'
+                            color:hex('000000')
+                            text_size:self.size
+                            font_size:16
+                            multiline:True
+                            halign:'center'
+                            size_hint_y:.1
+                            canvas.before:
+                                Color:
+                                    rgba: hex("21BF7D")
+                                Rectangle:
+                                    pos:self.pos
+                                    size:self.size              
+                        BoxLayout:
+                            orientation:'vertical'
+                            size_hint_y:.3
+                            spacing: 5
+                            padding:(5,0,5,0)
+                            Label:
+                                text:"Pipe Following"
+                                font_size: 16
+                                halign:'center'
+                                canvas.before:
+                                    Color:
+                                        rgba: hex("#032B43")
+                                    Rectangle:
+                                        pos:self.pos
+                                        size:self.size
+                            BoxLayout:
+                                orientation:'horizontal'
+                                spacing: 5
+                                ToggleButton:
+                                    id:pipeO
+                                    text:"Orientation"
+                                    font_size: 16
+                                    on_press:root.objective(root.ids.pipeO.state,"Orientation","Pipe")
+                                ToggleButton:
+                                    id:pipeT
+                                    text:"Thrust"
+                                    font_size: 16
+                                    on_press:root.objective(root.ids.pipeT.state,"Throtle","Pipe")
+                        BoxLayout:
+                            orientation:'vertical'
+                            size_hint_y:.3
+                            spacing:5
+                            padding:(5,0,5,0)
+                            Label:
+                                multiline:True
+                                text:"Obstacel Avoidance"
+                                font_size: 16
+                                halign:'center'
+                                canvas.before:
+                                    Color:
+                                        rgba: hex("#032B43")
+                                    Rectangle:
+                                        pos:self.pos
+                                        size:self.size
+                            BoxLayout:
+                                orientation:'horizontal'
+                                spacing: 5
+                                ToggleButton:
+                                    id:oaO
+                                    text:"Orientation"
+                                    font_size: 16
+                                    on_press:root.objective(root.ids.oaO.state,"Orientation","Obstacle Avoidance")
+                                ToggleButton:
+                                    id:oaT
+                                    text:"Thrust"
+                                    font_size: 16
+                                    on_press:root.objective(root.ids.oaT.state,"Throtle","Obstacle Avoidance")
+                        BoxLayout:
+                            orientation:'vertical'
+                            size_hint_y:.4
+                            spacing: 5
+                            padding:(5,0,5,5)
+                            Label:
+                                multiline:True
+                                size_hint_y:.3
+                                text:"Visual Odometry"
+                                font_size: 16
+                                halign:'center'
+                                canvas.before:
+                                    Color:
+                                        rgba: hex("#032B43")
+                                    Rectangle:
+                                        pos:self.pos
+                                        size:self.size
+                            BoxLayout:
+                                orientation:'horizontal'
+                                size_hint_y:.7
+                                spacing:5
+                                ToggleButton:
+                                    id:VO
+                                    text:"Calc. VO"
+                                    multiline:True
+                                    font_size: 16
+                                    halign:'center'
+                                    size_hint_x:.5
+                                BoxLayout:
+                                    orientation:'vertical'
+                                    size_hint_x:.5
+                                    spacing:5
+                                    BoxLayout:
+                                        orientation:'horizontal'
+                                        canvas.before:
+                                            Color:
+                                                rgba: hex("#032B43")
+                                            Rectangle:
+                                                pos:self.pos
+                                                size:self.size
+                                        Label:
+                                            size_hint_x:.2
+                                            font_size: 14
+                                            text:'X :'      
+                                        Label:
+                                            size_hint_x:.6
+                                            font_size: 14
+                                            id:VOx
+                                            text:'%' 
+                                        Label:
+                                            size_hint_x:.2
+                                            font_size: 14
+                                            text:'m' 
+                                    BoxLayout:
+                                        orientation:'horizontal'
+                                        canvas.before:
+                                            Color:
+                                                rgba: hex("#032B43")
+                                            Rectangle:
+                                                pos:self.pos
+                                                size:self.size
+                                        Label:
+                                            size_hint_x:.2
+                                            font_size: 14
+                                            text:'Y :'      
+                                        Label:
+                                            size_hint_x:.6
+                                            font_size: 14
+                                            id:VOy
+                                            text:'%'  
+                                        Label:
+                                            size_hint_x:.2
+                                            font_size: 14
+                                            text:'m'    
+                                    BoxLayout:
+                                        orientation:'horizontal'
+                                        canvas.before:
+                                            Color:
+                                                rgba: hex("#032B43")
+                                            Rectangle:
+                                                pos:self.pos
+                                                size:self.size
+                                        Label:
+                                            size_hint_x:.2
+                                            font_size: 14
+                                            text:'Z :'      
+                                        Label:
+                                            size_hint_x:.6
+                                            font_size: 14
+                                            id:VOz
+                                            text:'%'  
+                                        Label:
+                                            size_hint_x:.2
+                                            font_size: 14
+                                            text:'m'
+                    BoxLayout:
+                        orientation:'vertical'
+                        size_hint_y:.075
+                        spacing:5
+                        canvas:
+                            Color:
+                                rgba: hex("#184362")
+                            Rectangle:
+                                pos:self.pos
+                                size:self.size
+                        Label:
+                            text:'CAMERA'
+                            color:hex('000000')
+                            text_size:self.size
+                            halign:'center'
+                            font_size:16
+                            size_hint_y:.5
+                            canvas.before:
+                                Color:
+                                    rgba: hex("21BF7D")
+                                Rectangle:
+                                    pos:self.pos
+                                    size:self.size  
+                        BoxLayout:
+                            orientation:'horizontal'
+                            size_hint_y:.5
+                            spacing: 5
+                            padding:(5,0,5,5)
+                            ToggleButton:
+                                id:camB_btn
+                                text:'Bottom'
+                                font_size:14
+                                on_press:root.camB_btn()
+                            ToggleButton:
+                                id:camF_btn
+                                text:'Front'
+                                font_size:14
+                                on_press:root.camF_btn()
+                    BoxLayout:
+                        orientation:'vertical'
+                        size_hint_y:.4
+                        spacing:5    
+                    BoxLayout:
+                        orientation:'horizontal'
+                        size_hint_y:.05
+                        canvas:
+                            Color:
+                                rgba: hex("215A84")
+                            Rectangle:
+                                pos:self.pos
+                                size:self.size
+                        Label:
+                            text:'RunTime:'
+                            text_size:self.size
+                            halign:'left'
+                            font_size:14
+                            padding:(10,0,0,0)
+                        Label:
+                            id:runtime
+                            text:'HH:mm:dd'
+                            text_size:self.size
+                            halign:'left'
+                            font_size:14
+                            # padding:(5,0,0,0)
+                    
+                
+            BoxLayout: #=========================================
+                orientation:'vertical'
+                size_hint:(.9,1)
+                BoxLayout:
+                    orientation:'horizontal'
+                    size_hint_y:.05
+                    spacing:5
+                    padding:(0,5,5,5)
+                    canvas:
+                        Color:
+                            rgba: hex("032B43")
+                        Rectangle:
+                            pos:self.pos
+                            size:self.size
+                    
+                    BoxLayout:
+                        orientation:'horizontal'
+                        size_hint_x:.2
+                        spacing:5
+                        Label:
+                            id:arm
+                            text:"Arm"
+                            font_size: 16
+                            halign:'center'
+                            size_hint_x:.5
+                            canvas.before:
+                                Color:
+                                    rgba: hex("215A84")
+                                Rectangle:
+                                    pos:self.pos
+                                    size:self.size
+                        Label:
+                            id:sub_mode
+                            text:"Sub_Mode"
+                            font_size: 16
+                            halign:'center'
+                            size_hint_x:.5
+                            canvas.before:
+                                Color:
+                                    rgba: hex("215A84")
+                                Rectangle:
+                                    pos:self.pos
+                                    size:self.size
+
+                    BoxLayout:
+                        orientation:'horizontal'
+                        size_hint_x:.4
+                        Label:
+                            text:'~ LOG ~'
+                            font_size: 18
+                            color:hex('000000')
+                            size_hint_x: .1
+                            canvas.before:
+                                Color:
+                                    rgba: hex("21BF7D")
+                                Rectangle:
+                                    pos:self.pos
+                                    size:self.size
+                        ScrollView:
+                            id:log
+                            do_scroll_x:False
+                            do_scroll_y:True
+                            size_hint:(.7,1)
+                            
+                            Label:
+                                text:root.logs
+                                padding:(10,0,0,0)
+                                size_hint_y:None
+                                height:self.texture_size[1]
+                                text_size:self.width,None
+                                font_size: 16
+                                halign:'left'
+                                color:hex('ffffff')
+                                canvas.before:
+                                    Color:
+                                        rgba: hex("004370")
+                                    Rectangle:
+                                        pos:self.pos
+                                        size:self.size
+                    Label:
+                        text:'~ HA/ROV GUI ~'
+                        color:hex('000000')
+                        size_hint_x:.2
+                        canvas.before:
+                            Color:
+                                rgba: hex("21BF7D")
+                            Rectangle:
+                                pos:self.pos
+                                size:self.size
+                    BoxLayout:
+                        orientation:'horizontal'
+                        size_hint_x:.075
+                        padding:(0,5,0,5)
+                        canvas.before:
+                            Color:
+                                rgba: hex("21BF7D")
+                            Rectangle:
+                                pos:self.pos
+                                size:self.size
+                        Image:
+                            id:its
+                            size_hint_x:.3
+                            allow_stretch:True
+                            keep_ratio:True
+                        Image:
+                            id:tekpal
+                            size_hint_x:.3
+                            allow_stretch:False
+                            keep_ratio:True
+                        Image:
+                            id:elektro
+                            size_hint_x:.3
+                            allow_stretch:False
+                            keep_ratio:True
+                Image:
+                    size_hint_y:.95
+                    id:cam_main
+                    allow_stretch:True
+                    keep_ratio:True
+                    canvas.before:
+                        PushMatrix
+                        Rotate:
+                            # angle: 15
+                            angle: 180
+                            origin: self.center
+                    canvas.after:
+                        PopMatrix
+                    # size: (self.parent.width/2,self.parent.height)
+        
+    FloatLayout:
+        size:root.width,root.height
+        BoxLayout:
+            orientation:'vertical'
+            size_hint:(.08,.15)
+            pos_hint:{'center_x':.95,'center_y':.665}
+            canvas.before:
+                Color:
+                    rgba: 0,0,0,.5
+                Rectangle:
+                    pos:self.pos
+                    size:self.size
+            BoxLayout:
+                orientation:'horizontal'
+                spacing:5
+                size_hint_y:.2
+                padding:(10,0,0,0)
+                Label:
+                    size_hint_x:.4
+                    text:'Heading'
+                    background_color: 0,0,0,0
+                    font_size:14
+                    text_size:self.size
+                    halign:'left'
+                Label:
+                    text:' : '
+                    size_hint_x:.2
+                    font_size:14
+                Label:
+                    size_hint_x:.4
+                    text_size:self.size
+                    id: yaw_actual
+                    font_size:14
+                    halign:'left'
+                    text: "%"
+            BoxLayout:
+                orientation:'horizontal'
+                spacing:5
+                size_hint_y:.2
+                padding:(10,0,0,0)
+                Label:
+                    size_hint_x:.4
+                    text:'Pitch'
+                    background_color: 0,0,0,0
+                    text_size:self.size
+                    halign:'left'
+                    font_size:14
+                Label:
+                    text:' : '
+                    size_hint_x:.2
+                    font_size:14
+                Label:
+                    size_hint_x:.4
+                    text_size:self.size
+                    id: pitch_actual
+                    font_size:14
+                    halign:'left'
+                    text: "%"
+            BoxLayout:
+                orientation:'horizontal'
+                spacing:5
+                padding:(10,0,0,0)
+                size_hint_y:.2
+                Label:
+                    size_hint_x:.4
+                    text:'Roll'
+                    background_color: 0,0,0,0
+                    text_size:self.size
+                    font_size:14
+                    halign:'left'
+                Label:
+                    text:' : '
+                    size_hint_x:.2
+                    font_size:14
+                Label:
+                    size_hint_x:.4
+                    text_size:self.size
+                    id: roll_actual
+                    font_size:14
+                    halign:'left'
+                    text: "%"
+            BoxLayout:
+                orientation:'horizontal'
+                spacing:5
+                size_hint_y:.2
+                padding:(10,0,0,0)
+                Label:
+                    size_hint_x:.4
+                    text:'Depth'
+                    background_color: 0,0,0,0
+                    text_size:self.size
+                    halign:'left'
+                    font_size:14
+                Label:
+                    text:' : '
+                    size_hint_x:.2
+                    font_size: 14
+                Label:
+                    size_hint_x:.4
+                    text_size:self.size
+                    id: depth_actual
+                    halign:'left'
+                    text: "%"
+                    font_size: 12
+            BoxLayout:
+                orientation:'horizontal'
+                spacing:5
+                size_hint_y:.2
+                padding:(10,0,0,0)
+                Label:
+                    size_hint_x:.4
+                    text:'Range'
+                    background_color: 0,0,0,0
+                    text_size:self.size
+                    halign:'left'
+                    font_size: 14
+                Label:
+                    text:' : '
+                    size_hint_x:.2
+                    font_size: 14
+                Label:
+                    size_hint_x:.4
+                    text_size:self.size
+                    id: range_actual
+                    halign:'left'
+                    text: "%"
+                    font_size: 14
+        BoxLayout:
+            orientation:'vertical'
+            id:yaw
+            text:'yaw'
+            size_hint:(.2,.05)
+            pos_hint:{'center_x':.5,'center_y':.9}
+        # Label:
+        #     text:'v'
+        #     size_hint:(None,None)
+        #     size: (50,50)
+        #     halign:'center'
+        #     pos_hint:{'center_x':.5,'center_y':.92}
+        BoxLayout:
+            id:pitch
+            orientation:'vertical'
+            pos_hint:{'center_x':.95,'center_y':.825}
+        Image:
+            id:roll
+            size_hint:(None,None)
+            size: (152,152)
+            keep_ratio:True
+            pos_hint:{'center_x':.95,'center_y':.825}
+            canvas.before:
+                PushMatrix
+                Rotate:
+                    # angle: 15
+                    angle: root.actual_roll
+                    origin: self.center
+            canvas.after:
+                PopMatrix
+
+<Settings> 
+    canvas:
+        Color:
+            rgba: hex("004370")
+        Rectangle:
+            pos:self.pos
+            size:self.size
+    auto_dismiss:True
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint: 0.9, 0.9
+        pos_hint: {"x":0.05, "y":0.05}
+        spacing: 5
+        BoxLayout:#======================================================G Param
+            orientation:'vertical'
+            size_hint:1,.2
+            spacing:5
+            Label:
+                text:"General Parameters"
+                size_hint: 1,.2
+                font_size: 22
+                canvas.before:
+                    Color:
+                        rgba: hex("005C99")
+                    Rectangle:
+                        pos:self.pos
+                        size:self.size
+            BoxLayout:
+                orientation:'horizontal'
+                size_hint: 1,.8
+                spacing:5
+                BoxLayout:
+                    orientation:'vertical'
+                    size_hint:.25,1
+                    canvas:
+                        Color:
+                            rgba: hex("005C99")
+                        Rectangle:
+                            pos:self.pos
+                            size:self.size
+                    GridLayout:
+                        cols: 2
+                        Label:
+                            text:'KP_roll'
+                            font_size:16
+                        TextInput:
+                            id:kproll
+                            multiline:False
+                            font_size:16
+                            text:'90'
+                        Label:
+                            text:'KI_roll'
+                            font_size:16
+                        TextInput:
+                            id:kiroll
+                            multiline:False
+                            font_size:16
+                            text:'10'
+                        Label:
+                            text:'KD_roll'
+                            font_size:16
+                        TextInput:
+                            id:kdroll
+                            multiline:False
+                            font_size:16
+                            text:'5'
+                BoxLayout:
+                    orientation:'vertical'
+                    size_hint:.25,1
+                    canvas:
+                        Color:
+                            rgba: hex("005C99")
+                        Rectangle:
+                            pos:self.pos
+                            size:self.size
+                    GridLayout:
+                        cols: 2
+                        Label:
+                            text:'KP_pitch'
+                            font_size:16
+                        TextInput:
+                            id:kppitch
+                            multiline:False
+                            font_size:16
+                            text:'90'
+                        Label:
+                            text:'KI_pitch'
+                            font_size:16
+                        TextInput:
+                            id:kipitch
+                            multiline:False
+                            font_size:16
+                            text:'10'
+                        Label:
+                            text:'KD_pitch'
+                            font_size:16
+                        TextInput:
+                            id:kdpitch
+                            multiline:False
+                            font_size:16
+                            text:'5'
+                BoxLayout:
+                    orientation:'vertical'
+                    size_hint:.25,1
+                    canvas:
+                        Color:
+                            rgba: hex("005C99")
+                        Rectangle:
+                            pos:self.pos
+                            size:self.size
+                    GridLayout:
+                        cols: 2
+                        Label:
+                            text:'KP_yaw'
+                            font_size:16
+                        TextInput:
+                            id:kpyaw
+                            multiline:False
+                            font_size:16
+                            text:'90'
+                        Label:
+                            text:'KI_yaw'
+                            font_size:16
+                        TextInput:
+                            id:kiyaw
+                            multiline:False
+                            font_size:16
+                            text:'10'
+                        Label:
+                            text:'KD_yaw'
+                            font_size:16
+                        TextInput:
+                            id:kdyaw
+                            multiline:False
+                            font_size:16
+                            text:'5'
+                BoxLayout:
+                    orientation:'vertical'
+                    size_hint:.25,1
+                    canvas:
+                        Color:
+                            rgba: hex("005C99")
+                        Rectangle:
+                            pos:self.pos
+                            size:self.size
+                    GridLayout:
+                        cols: 2
+                        Label:
+                            text:'KP_depth'
+                            font_size:16
+                        TextInput:
+                            id:kpdepth
+                            multiline:False
+                            font_size:16
+                            text:'90'
+                        Label:
+                            text:'KI_depth'
+                            font_size:16
+                        TextInput:
+                            id:kidepth
+                            multiline:False
+                            font_size:16
+                            text:'10'
+                        Label:
+                            text:'KD_depth'
+                            font_size:16
+                        TextInput:
+                            id:kddepth
+                            multiline:False
+                            font_size:16
+                            text:'5'
+        BoxLayout:#======================================================Pipe Param
+            orientation:'vertical'
+            size_hint:1,.2
+            spacing:5
+            Label:
+                text:"Pipe Following Parameters"
+                size_hint: 1,.2
+                font_size: 22
+                canvas.before:
+                    Color:
+                        rgba: hex("005C99")
+                    Rectangle:
+                        pos:self.pos
+                        size:self.size
+            BoxLayout:
+                orientation:'horizontal'
+                size_hint: 1,.8
+                spacing:5
+                BoxLayout:
+                    orientation:'vertical'
+                    size_hint:.25,1
+                    canvas:
+                        Color:
+                            rgba: hex("005C99")
+                        Rectangle:
+                            pos:self.pos
+                            size:self.size
+                    GridLayout:
+                        cols: 2
+                        Label:
+                            text:'KP_heading'
+                            font_size:16
+                        TextInput:
+                            id:kppipeH
+                            multiline:False
+                            font_size:16
+                            text:'90'
+                        Label:
+                            text:'KI_heading'
+                            font_size:16
+                        TextInput:
+                            id:kipipeH
+                            multiline:False
+                            font_size:16
+                            text:'10'
+                        Label:
+                            text:'KD_heading'
+                            font_size:16
+                        TextInput:
+                            id:kdpipeH
+                            multiline:False
+                            font_size:16
+                            text:'5'
+                BoxLayout:
+                    orientation:'vertical'
+                    size_hint:.25,1
+                    canvas:
+                        Color:
+                            rgba: hex("005C99")
+                        Rectangle:
+                            pos:self.pos
+                            size:self.size
+                    GridLayout:
+                        cols: 2
+                        Label:
+                            text:'KP_surge'
+                            font_size:16
+                        TextInput:
+                            id:kppipeS
+                            multiline:False
+                            font_size:16
+                            text:'90'
+                        Label:
+                            text:'KI_surge'
+                            font_size:16
+                        TextInput:
+                            id:kipipeS
+                            multiline:False
+                            font_size:16
+                            text:'10'
+                        Label:
+                            text:'KD_surge'
+                            font_size:16
+                        TextInput:
+                            id:kdpipeS
+                            multiline:False
+                            font_size:16
+                            text:'5'
+                BoxLayout:
+                    orientation:'vertical'
+                    size_hint:.25,1
+                    canvas:
+                        Color:
+                            rgba: hex("005C99")
+                        Rectangle:
+                            pos:self.pos
+                            size:self.size
+                    GridLayout:
+                        cols: 2
+                        Label:
+                            text:'KP_range'
+                            font_size:16
+                        TextInput:
+                            id:kppipeR
+                            multiline:False
+                            font_size:16
+                            text:'90'
+                        Label:
+                            text:'KI_range'
+                            font_size:16
+                        TextInput:
+                            id:kipipeR
+                            multiline:False
+                            font_size:16
+                            text:'10'
+                        Label:
+                            text:'KD_range'
+                            font_size:16
+                        TextInput:
+                            id:kdpipeR
+                            multiline:False
+                            font_size:16
+                            text:'5'
+                BoxLayout:
+                    orientation:'vertical'
+                    size_hint:.25,1
+                    canvas:
+                        Color:
+                            rgba: hex("005C99")
+                        Rectangle:
+                            pos:self.pos
+                            size:self.size
+                    GridLayout:
+                        cols: 2
+                        Label:
+                            text:'Threshold'
+                            font_size:16
+                        TextInput:
+                            id:pipethresh
+                            multiline:False
+                            font_size:16
+                            text:'90'
+                        Label:
+                            text:'IOU'
+                            font_size:16
+                        TextInput:
+                            id:pipeiou
+                            multiline:False
+                            font_size:16
+                            text:'10'
+                        Label:
+                            text:''
+                            font_size:16
+                        Label:
+                            text:''
+        BoxLayout:#======================================================OA Param
+            orientation:'vertical'
+            size_hint:1,.2
+            spacing:5
+            Label:
+                text:"Obstacle Avoidance Parameters"
+                size_hint: 1,.2
+                font_size: 22
+                canvas.before:
+                    Color:
+                        rgba: hex("005C99")
+                    Rectangle:
+                        pos:self.pos
+                        size:self.size
+            BoxLayout:
+                orientation:'horizontal'
+                size_hint: 1,.8
+                spacing:5
+                BoxLayout:
+                    orientation:'vertical'
+                    size_hint:.25,1
+                    canvas:
+                        Color:
+                            rgba: hex("005C99")
+                        Rectangle:
+                            pos:self.pos
+                            size:self.size
+                    GridLayout:
+                        cols: 2
+                        Label:
+                            text:'KP_heading'
+                            font_size:16
+                        TextInput:
+                            id:kpoaH
+                            multiline:False
+                            font_size:16
+                            text:'90'
+                        Label:
+                            text:'KI_heading'
+                            font_size:16
+                        TextInput:
+                            id:kioaH
+                            multiline:False
+                            font_size:16
+                            text:'10'
+                        Label:
+                            text:'KD_heading'
+                            font_size:16
+                        TextInput:
+                            id:kdoaH
+                            multiline:False
+                            font_size:16
+                            text:'5'
+                BoxLayout:
+                    orientation:'vertical'
+                    size_hint:.25,1
+                    canvas:
+                        Color:
+                            rgba: hex("005C99")
+                        Rectangle:
+                            pos:self.pos
+                            size:self.size
+                    GridLayout:
+                        cols: 2
+                        Label:
+                            text:'KP_surge'
+                            font_size:16
+                        TextInput:
+                            id:kpoaS
+                            multiline:False
+                            font_size:16
+                            text:'90'
+                        Label:
+                            text:'KI_surge'
+                            font_size:16
+                        TextInput:
+                            id:kioaS
+                            multiline:False
+                            font_size:16
+                            text:'10'
+                        Label:
+                            text:'KD_surge'
+                            font_size:16
+                        TextInput:
+                            id:kdoaS
+                            multiline:False
+                            font_size:16
+                            text:'5'
+                BoxLayout:
+                    orientation:'vertical'
+                    size_hint:.25,1
+                    canvas:
+                        Color:
+                            rgba: hex("005C99")
+                        Rectangle:
+                            pos:self.pos
+                            size:self.size
+                    GridLayout:
+                        cols: 2
+                        Label:
+                            text:'KP_range'
+                            font_size:16
+                        TextInput:
+                            id:kpoaR
+                            multiline:False
+                            font_size:16
+                            text:'90'
+                        Label:
+                            text:'KI_range'
+                            font_size:16
+                        TextInput:
+                            id:kioaR
+                            multiline:False
+                            font_size:16
+                            text:'10'
+                        Label:
+                            text:'KD_range'
+                            font_size:16
+                        TextInput:
+                            id:kdoaR
+                            multiline:False
+                            font_size:16
+                            text:'5'
+                BoxLayout:
+                    orientation:'vertical'
+                    size_hint:.25,1
+                    canvas:
+                        Color:
+                            rgba: hex("005C99")
+                        Rectangle:
+                            pos:self.pos
+                            size:self.size
+                    GridLayout:
+                        cols: 2
+                        Label:
+                            text:'Threshold'
+                            font_size:16
+                        TextInput:
+                            id:oathresh
+                            multiline:False
+                            font_size:16
+                            text:'90'
+                        Label:
+                            text:'IOU'
+                            font_size:16
+                        TextInput:
+                            id:oaiou
+                            multiline:False
+                            font_size:16
+                            text:'10'
+                        Label:
+                            text:''
+                            font_size:16
+                        Label:
+                            text:''
+        BoxLayout:#======================================================map Param
+            orientation:'vertical'
+            size_hint:1,.2
+            spacing:5
+            Label:
+                text:"Mapping Parameters"
+                size_hint: 1,.2
+                font_size: 22
+                canvas.before:
+                    Color:
+                        rgba: hex("005C99")
+                    Rectangle:
+                        pos:self.pos
+                        size:self.size
+            BoxLayout:
+                orientation:'horizontal'
+                size_hint: 1,.8
+                spacing:5
+        BoxLayout:
+            orientation:'horizontal'
+            size_hint: 1, 0.1
+            padding:10
+            Button:
+                text: "Save"
+                background_color: utils.get_color_from_hex('08B821')
+                on_press: root.save_conf()
