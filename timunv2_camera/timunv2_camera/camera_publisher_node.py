@@ -28,7 +28,7 @@ class Camera_Publisher_Node(Node):
         ret, frame = self.cap.read()
         if ret:
             try:
-                frame = cv2.resize(frame, (640, 384))
+                # frame = cv2.resize(frame, (640, 384))
                 msg = self.cv_bridge.cv2_to_imgmsg(frame, "bgr8")
                 self.publisher_.publish(msg)
             except Exception as e:
