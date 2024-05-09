@@ -264,6 +264,7 @@ class MasterController(Node):
         self.operation_mode_()
         self.mixed_vel_cmd()
         self.publish_messages()
+        # self.get_logger().info("enter timer callback")
 
     def publish_messages(self):
         self.master_setpoint.set_point_yaw = self.yaw_setpoint

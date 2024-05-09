@@ -46,6 +46,7 @@ class JoySubNode(Node):
         self.dpth_button_old = False
         self.stabilize = False
         self.depthhold = False
+        self.r3_button = False
 
     def joy_callback(self, msg: Joy):
         #analog sticks to velocity
@@ -65,7 +66,7 @@ class JoySubNode(Node):
             self.cmd_vel.angular.x = msg.axes[3]
             self.cmd_vel.angular.y = msg.axes[2]*-1
 
-        #"arrow up"button as lumen intensity
+        #"arrow up & down"button as lumen intensity
         if( msg.axes[6] > 0 and self.lumen_pwr < 100 ):
         # if( msg.axes[5] > 0 and self.lumen_pwr < 100 ):
             self.lumen_pwr += 1
@@ -119,6 +120,9 @@ class JoySubNode(Node):
                 self.operation_mode = 0
         self.opr_button_old = self.opr_button_new
 
+        #r3 button as IMU reset
+        self.r3_button = bool(msg.buttons[11])
+
     def publish_messages(self):
         self.cmd_utl.lumen = self.lumen_pwr
         self.cmd_utl.arm_hw = self.arm_hardware
@@ -128,6 +132,7 @@ class JoySubNode(Node):
         self.cmd_utl.stabilize = self.stabilize
         self.cmd_utl.depthhold = self.depthhold
         self.cmd_utl.max_throtle = self.max_throtle_scale
+        self.cmd_utl.imu_reset = self.r3_button
 
         self.joy_cmd_vel_pub_.publish(self.cmd_vel)
         self.joy_cmd_utl_pub_.publish(self.cmd_utl)

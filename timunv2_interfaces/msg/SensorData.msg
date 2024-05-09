@@ -5,5 +5,5 @@ float32 depth
 float32 ranges_scan
 float32 confidence
 float32 pressure_inside
-int8 batter_nuc
-int8 battery_robot
+float32 batter_nuc
+float32 battery_robot
