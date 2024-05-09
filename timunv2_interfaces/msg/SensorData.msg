@@ -5,3 +5,5 @@ float32 depth
 float32 ranges_scan
 float32 confidence
 float32 pressure_inside
+float32 batt1_volt
+float32 batt2_volt

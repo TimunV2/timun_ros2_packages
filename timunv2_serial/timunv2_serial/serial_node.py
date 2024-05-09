@@ -24,12 +24,13 @@ class Serial_Node(Node):
         self.joy_cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.joy_cmd_utl_callback, 10)
         self.serial_sensor_pub_ = self.create_publisher(SensorData, "serial_sensor_data", 10)
 
-        self.timer_ = self.create_timer(0.001, self.timer_callback)
+        self.timer_ = self.create_timer(0.01, self.timer_callback)
 
         self.yaml_filepath = '/home/hasan/ros2_ws/src/timunv2_bringup/config/pidparams.yaml'
 
         #Serial 
-        self.port = '/dev/serial/by-id/usb-STM32_Virtual_ComPort_Љ_STMicroelectronics-if00'
+        # self.port = '/dev/serial/by-id/usb-STM32_Virtual_ComPort_Љ_STMicroelectronics-if00'
+        self.port = '/dev/serial/by-id/usb-STMicroelectronics_STM32_Virtual_ComPort_356536713431-if00'
         self.baudrate = 115200
         self.ser = None
         self.communication_status_now = False
@@ -60,6 +61,7 @@ class Serial_Node(Node):
         self.arm_software = False
         self.movement_mode = 0
         self.operation_mode = 0
+        self.imu_reset = False
 
         #sensor data variable
         self.sensor = SensorData()
@@ -86,6 +88,7 @@ class Serial_Node(Node):
         self.arm_software = msg.arm_sw
         self.movement_mode = msg.mov_mode
         self.operation_mode = msg.opr_mode
+        self.imu_reset = msg.imu_reset
 
     def pid_const_yaml(self):
         try:
@@ -117,20 +120,21 @@ class Serial_Node(Node):
             print(f"Error reading YAML file: {str(e)}")
 
     def serial_write(self):
+        # 0
         message_linear_x = self.vel_linear_converted[0].to_bytes(2, byteorder='big', signed=True)
         message_linear_y = self.vel_linear_converted[1].to_bytes(2, byteorder='big', signed=True)
         message_linear_z = self.vel_linear_converted[2].to_bytes(2, byteorder='big', signed=True)
         message_angular_x = self.vel_angular_converted[0].to_bytes(2, byteorder='big', signed=True)
         message_angular_y = self.vel_angular_converted[1].to_bytes(2, byteorder='big', signed=True)
         message_angular_z = self.vel_angular_converted[2].to_bytes(2, byteorder='big', signed=True)
-
+        # 12
         message_throtle_scale = self.max_throtle_scale_converted.to_bytes(2, byteorder='big', signed=True)
-
+        # 14
         message_set_point_yaw = self.set_point_converted[0].to_bytes(2, byteorder='big', signed=True)
         message_set_point_pitch = self.set_point_converted[1].to_bytes(2, byteorder='big', signed=True)
         message_set_point_roll = self.set_point_converted[2].to_bytes(2, byteorder='big', signed=True)
         message_set_point_depth = self.set_point_converted[3].to_bytes(2, byteorder='big', signed=True)
-
+        # 22
         message_kp_yaw = self.k_yaw[0].to_bytes(2, byteorder='big', signed=True)
         message_ki_yaw = self.k_yaw[1].to_bytes(2, byteorder='big', signed=True)
         message_kd_yaw = self.k_yaw[2].to_bytes(2, byteorder='big', signed=True)
@@ -143,20 +147,20 @@ class Serial_Node(Node):
         message_kp_depth = self.k_depth[0].to_bytes(2, byteorder='big', signed=True)
         message_ki_depth = self.k_depth[1].to_bytes(2, byteorder='big', signed=True)
         message_kd_depth = self.k_depth[2].to_bytes(2, byteorder='big', signed=True)
-
+        # 46
         message_lumen_pwr = self.lumen_pwr.to_bytes(2, byteorder='big', signed=True)
-
+        # 48
         message_movement_mode = self.movement_mode.to_bytes(1, byteorder='big', signed=True)
         message_operation_mode = self.operation_mode.to_bytes(1, byteorder='big', signed=True)
-
         message_arm_hardware = self.arm_hardware.to_bytes(1, byteorder='big', signed=True)
         message_arm_software = self.arm_software.to_bytes(1, byteorder='big', signed=True)
+        message_imu_reset = self.imu_reset.to_bytes(1, byteorder='big', signed=True)
         
         try:
             self.ser = serial.Serial(self.port, self.baudrate)
             self.communication_status_now = True
             if self.communication_status_now == True and self.communication_status_last == False:
-                self.get_logger().info("serial port opening success")
+                self.get_logger().info("Serial port opening success")
         
         except Exception as e:
             self.communication_status_now = False
@@ -177,13 +181,14 @@ class Serial_Node(Node):
                                 + message_lumen_pwr
                                 + message_movement_mode + message_operation_mode
                                 + message_arm_hardware + message_arm_software
+                                + message_imu_reset
                                 )
             self.write_status_now = True
 
         except Exception as e:
             self.write_status_now = False
             if self.write_status_now == False and self.write_status_last == True:
-                self.get_logger().error(f"Error writinggggg serial port: {str(e)}")
+                self.get_logger().error(f"Error writing serial port: {str(e)}")
 
         self.write_status_last = self.write_status_now
         
@@ -199,11 +204,15 @@ class Serial_Node(Node):
         try:
             received_data = self.ser.read(14)
             if received_data:
-                received_yaw, received_pitch, received_roll, received_depth, received_pressure, received_ranges, received_confidence  = struct.unpack('hhhhhhh', received_data)
+                received_yaw, received_pitch, received_roll, received_depth, received_pressure, received_batt1, received_batt2  = struct.unpack('hhhhhhh', received_data)
                 self.sensor.imu_yaw = received_yaw/10.0
                 self.sensor.imu_pitch = received_pitch/10.0
                 self.sensor.imu_roll= received_roll/10.0
-                self.sensor.depth = received_depth/10.0
+                self.sensor.depth = received_depth/100.0
+                self.sensor.pressure_inside = received_pressure/100.0
+                self.sensor.batt1_volt = received_batt1/100.0
+                self.sensor.batt2_volt = received_batt2/100.0
+
             self.read_status_now = True
 
         except Exception as e:
@@ -215,6 +224,7 @@ class Serial_Node(Node):
         
 
     def timer_callback(self):
+        # self.get_logger().info("enter timer callback")
         self.pid_const_yaml()
         self.serial_write()
         self.serial_read()
