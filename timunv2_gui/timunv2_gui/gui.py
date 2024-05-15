@@ -18,7 +18,7 @@ from kivy.uix.image import Image as KivyImage
 from io import BytesIO
 from PIL import Image as PILImage
 from kivy.graphics.texture import Texture
-from timunv2_interfaces.msg import GuiUtilities, SetPoint, SensorData, JoyUtilities
+from timunv2_interfaces.msg import GuiUtilities, SetPoint, SensorData, JoyUtilities, ParamData
 from kivy.core.window import Window
 from sensor_msgs.msg import Image
 from kivy.uix.floatlayout import FloatLayout
@@ -28,9 +28,12 @@ from cv_bridge import CvBridge
 
 
 cur_dir = os.path.dirname(os.path.realpath(__file__))
-CONF =  os.path.join(cur_dir,'..','..','timunv2_bringup','config','pidparams.yaml')
-SHARE = os.path.join(cur_dir,'..','share')
-GUI_KIVY = os.path.join(cur_dir,'..','config','hud.kv')
+# CONF =  os.path.join(cur_dir,'..','..','timunv2_bringup','config','pidparams.yaml')
+# SHARE = os.path.join(cur_dir,'..','share')
+# GUI_KIVY = os.path.join(cur_dir,'..','config','hud.kv')
+CONF =  "/home/tkd/timunv2_ws/src/timunv2_bringup/config/pidparams.yaml"
+SHARE = "/home/tkd/timunv2_ws/src/timunv2_gui/share"
+GUI_KIVY = "/home/tkd/timunv2_ws/src/timunv2_gui/config/hud.kv"
 Builder.load_file(GUI_KIVY)
 
 class GuiNode(Node):
@@ -48,16 +51,17 @@ class GuiNode(Node):
         self.arm_hw = False
         self.arm_sw = False
         self.mov_mode = 0
-        self.publisher_des= self.create_publisher(SetPoint,"/gui_set_point",10)
-        self.publisher_gui= self.create_publisher(GuiUtilities,"/gui_utl",10)
-        self.subscription = self.create_subscription(SensorData,'/serial_sensor_data',
-                                                     self.listener_callback,10)
-        self.subscription2 = self.create_subscription(Image, '/camera_front', 
-                                                self.listener_camF, 10)
-        self.status_sub     = self.create_subscription(JoyUtilities,"/joy_cmd_utl",
-                                                       self.status_callback, 10)
-        self.subscription
-        self.subscription2
+        self.publisher_des      = self.create_publisher(SetPoint,"/gui_set_point",10)
+        self.publisher_gui      = self.create_publisher(GuiUtilities,"/gui_utl",10)
+        self.publisher_param    = self.create_publisher(ParamData,"/gui_param",10)
+        # self.subscription       = self.create_subscription(SensorData,'/serial_sensor_data',
+        #                                              self.listener_callback,10)
+        # self.subscription2      = self.create_subscription(Image, '/camera_front', 
+        #                                         self.listener_camF, 10)
+        # self.status_sub         = self.create_subscription(JoyUtilities,"/joy_cmd_utl",
+        #                                                self.status_callback, 10)
+        # self.subscription
+        # self.subscription2
         self.cv_bridge = CvBridge()
     def status_callback(self,msg):
         self.arm_hw     = msg.arm_hw
@@ -124,12 +128,87 @@ class TimunLayout(Widget):
         self.camF = None
         self.camB = None
         self.show = Settings()
-
+        self.msg2 = ParamData()
+        # with open(CONF,'r') as f:
+        #     self.config = yaml.safe_load(f)
+        #     self.msg2.kp_roll           = float(self.config['serial_node']['pid_parameters']['kp_roll'])
+        #     self.msg2.ki_roll           = float(self.config['serial_node']['pid_parameters']['ki_roll'])
+        #     self.msg2.kd_roll           = float(self.config['serial_node']['pid_parameters']['kd_roll'])
+        #     self.msg2.kp_pitch           = float(self.config['serial_node']['pid_parameters']['kp_pitch'])
+        #     self.msg2.ki_pitch           = float(self.config['serial_node']['pid_parameters']['ki_pitch'])
+        #     self.msg2.kd_pitch           = float(self.config['serial_node']['pid_parameters']['kd_pitch'])
+        #     self.msg2.kp_yaw             = float(self.config['serial_node']['pid_parameters']['kp_yaw'])
+        #     self.msg2.ki_yaw             = float(self.config['serial_node']['pid_parameters']['ki_yaw'])
+        #     self.msg2.kd_yaw             = float(self.config['serial_node']['pid_parameters']['kd_yaw'])
+        #     self.msg2.kp_depth           = float(self.config['serial_node']['pid_parameters']['kp_depth'])
+        #     self.msg2.ki_depth           = float(self.config['serial_node']['pid_parameters']['ki_depth'])
+        #     self.msg2.kd_depth           = float(self.config['serial_node']['pid_parameters']['kd_depth'])
+        #     self.msg2.pipe_kp_heading    = float(self.config['pipeline_navigation']['pid_parameters']['kp_heading'])
+        #     self.msg2.pipe_ki_heading    = float(self.config['pipeline_navigation']['pid_parameters']['ki_heading'])
+        #     self.msg2.pipe_kd_heading    = float(self.config['pipeline_navigation']['pid_parameters']['kd_heading'])
+        #     self.msg2.pipe_kp_lateral    = float(self.config['pipeline_navigation']['pid_parameters']['kp_lateral'])
+        #     self.msg2.pipe_ki_lateral    = float(self.config['pipeline_navigation']['pid_parameters']['ki_lateral'])
+        #     self.msg2.pipe_kd_lateral    = float(self.config['pipeline_navigation']['pid_parameters']['kd_lateral'])
+        #     self.msg2.pipe_kp_range      = float(self.config['pipeline_navigation']['pid_parameters']['kp_range'])
+        #     self.msg2.pipe_ki_range      = float(self.config['pipeline_navigation']['pid_parameters']['ki_range'])
+        #     self.msg2.pipe_kd_range      = float(self.config['pipeline_navigation']['pid_parameters']['kd_range'])
+        #     self.msg2.pipe_threshold    = float(self.config['pipeline_navigation']['pid_parameters']['threshold'])
+        #     self.msg2.pipe_iou          = float(self.config['pipeline_navigation']['pid_parameters']['iou'])
+        #     self.msg2.oa_kp_heading      = float(self.config['obstacle_avoidance']['pid_parameters']['kp_heading'])
+        #     self.msg2.oa_ki_heading      = float(self.config['obstacle_avoidance']['pid_parameters']['ki_heading'])
+        #     self.msg2.oa_kd_heading      = float(self.config['obstacle_avoidance']['pid_parameters']['kd_heading'])
+        #     self.msg2.oa_kp_lateral      = float(self.config['obstacle_avoidance']['pid_parameters']['kp_lateral'])
+        #     self.msg2.oa_ki_lateral      = float(self.config['obstacle_avoidance']['pid_parameters']['ki_lateral'])
+        #     self.msg2.oa_kd_lateral      = float(self.config['obstacle_avoidance']['pid_parameters']['kd_lateral'])
+        #     self.msg2.oa_kp_range        = float(self.config['obstacle_avoidance']['pid_parameters']['kp_range'])
+        #     self.msg2.oa_ki_range        = float(self.config['obstacle_avoidance']['pid_parameters']['ki_range'])
+        #     self.msg2.oa_kd_range        = float(self.config['obstacle_avoidance']['pid_parameters']['kd_range'])
+        #     self.msg2.oa_threshold      = float(self.config['obstacle_avoidance']['pid_parameters']['threshold'])
+        #     self.msg2.oa_iou            = float(self.config['obstacle_avoidance']['pid_parameters']['iou'])
         self.setting_popup = Popup(title="Settings", content=self.show, 
                             size_hint=(None,None), size=(800,800))
         logging.getLogger().addHandler(LogUpdateHandler(self))
         Clock.schedule_interval(self.update,0.03)
-
+        Clock.schedule_interval(self.update_param,1)
+        
+    def update_param(self,dt):
+        with open(CONF,'r') as f:
+            self.config = yaml.safe_load(f)
+            self.msg2.kp_roll           = float(self.config['serial_node']['pid_parameters']['kp_roll'])
+            self.msg2.ki_roll           = float(self.config['serial_node']['pid_parameters']['ki_roll'])
+            self.msg2.kd_roll           = float(self.config['serial_node']['pid_parameters']['kd_roll'])
+            self.msg2.kp_pitch           = float(self.config['serial_node']['pid_parameters']['kp_pitch'])
+            self.msg2.ki_pitch           = float(self.config['serial_node']['pid_parameters']['ki_pitch'])
+            self.msg2.kd_pitch           = float(self.config['serial_node']['pid_parameters']['kd_pitch'])
+            self.msg2.kp_yaw             = float(self.config['serial_node']['pid_parameters']['kp_yaw'])
+            self.msg2.ki_yaw             = float(self.config['serial_node']['pid_parameters']['ki_yaw'])
+            self.msg2.kd_yaw             = float(self.config['serial_node']['pid_parameters']['kd_yaw'])
+            self.msg2.kp_depth           = float(self.config['serial_node']['pid_parameters']['kp_depth'])
+            self.msg2.ki_depth           = float(self.config['serial_node']['pid_parameters']['ki_depth'])
+            self.msg2.kd_depth           = float(self.config['serial_node']['pid_parameters']['kd_depth'])
+            self.msg2.pipe_kp_heading    = float(self.config['pipeline_navigation']['pid_parameters']['kp_heading'])
+            self.msg2.pipe_ki_heading    = float(self.config['pipeline_navigation']['pid_parameters']['ki_heading'])
+            self.msg2.pipe_kd_heading    = float(self.config['pipeline_navigation']['pid_parameters']['kd_heading'])
+            self.msg2.pipe_kp_lateral    = float(self.config['pipeline_navigation']['pid_parameters']['kp_lateral'])
+            self.msg2.pipe_ki_lateral    = float(self.config['pipeline_navigation']['pid_parameters']['ki_lateral'])
+            self.msg2.pipe_kd_lateral    = float(self.config['pipeline_navigation']['pid_parameters']['kd_lateral'])
+            self.msg2.pipe_kp_range      = float(self.config['pipeline_navigation']['pid_parameters']['kp_range'])
+            self.msg2.pipe_ki_range      = float(self.config['pipeline_navigation']['pid_parameters']['ki_range'])
+            self.msg2.pipe_kd_range      = float(self.config['pipeline_navigation']['pid_parameters']['kd_range'])
+            self.msg2.pipe_threshold    = float(self.config['pipeline_navigation']['pid_parameters']['threshold'])
+            self.msg2.pipe_iou          = float(self.config['pipeline_navigation']['pid_parameters']['iou'])
+            self.msg2.oa_kp_heading      = float(self.config['obstacle_avoidance']['pid_parameters']['kp_heading'])
+            self.msg2.oa_ki_heading      = float(self.config['obstacle_avoidance']['pid_parameters']['ki_heading'])
+            self.msg2.oa_kd_heading      = float(self.config['obstacle_avoidance']['pid_parameters']['kd_heading'])
+            self.msg2.oa_kp_lateral      = float(self.config['obstacle_avoidance']['pid_parameters']['kp_lateral'])
+            self.msg2.oa_ki_lateral      = float(self.config['obstacle_avoidance']['pid_parameters']['ki_lateral'])
+            self.msg2.oa_kd_lateral      = float(self.config['obstacle_avoidance']['pid_parameters']['kd_lateral'])
+            self.msg2.oa_kp_range        = float(self.config['obstacle_avoidance']['pid_parameters']['kp_range'])
+            self.msg2.oa_ki_range        = float(self.config['obstacle_avoidance']['pid_parameters']['ki_range'])
+            self.msg2.oa_kd_range        = float(self.config['obstacle_avoidance']['pid_parameters']['kd_range'])
+            self.msg2.oa_threshold      = float(self.config['obstacle_avoidance']['pid_parameters']['threshold'])
+            self.msg2.oa_iou            = float(self.config['obstacle_avoidance']['pid_parameters']['iou'])
+        self.node.publisher_param.publish(self.msg2)
     def update(self,dt):
         rclpy.spin_once(self.node, timeout_sec=0.05)
         r,p,y,d,ra,bat_n,bat_r,camF,camB,arm_hw,arm_sw,mov_mode = self.node.send_var()
@@ -198,6 +277,9 @@ class TimunLayout(Widget):
         msg1.throtle_mode = check_throtle(self)
         msg1.lumen = check_lumen(self)
         self.node.publisher_gui.publish(msg1)
+        
+        
+        
     
     def update_log(self,log_message):
         now = datetime.now().strftime("[%H:%M:%S:%f]")
@@ -243,8 +325,8 @@ class TimunLayout(Widget):
             self.show.ids.kipipeR.text = f"{self.config['pipeline_navigation']['pid_parameters']['ki_range']}"
             self.show.ids.kdpipeR.text = f"{self.config['pipeline_navigation']['pid_parameters']['kd_range']}"
 
-            # self.show.ids.pipethresh.text = f"{self.config['pipe']['threshold']}"
-            # self.show.ids.pipeiou.text = f"{self.config['pipe']['iou']}"
+            self.show.ids.pipethresh.text = f"{self.config['pipeline_navigation']['pid_parameters']['threshold']}"
+            self.show.ids.pipeiou.text    = f"{self.config['pipeline_navigation']['pid_parameters']['iou']}"
             
             self.show.ids.kpoaH.text = f"{self.config['obstacle_avoidance']['pid_parameters']['kp_heading']}"
             self.show.ids.kioaH.text = f"{self.config['obstacle_avoidance']['pid_parameters']['ki_heading']}"
@@ -256,9 +338,10 @@ class TimunLayout(Widget):
             self.show.ids.kioaR.text = f"{self.config['obstacle_avoidance']['pid_parameters']['ki_range']}"
             self.show.ids.kdoaR.text = f"{self.config['obstacle_avoidance']['pid_parameters']['kd_range']}"
 
-            # self.show.ids.oathresh.text = f"{self.config['oa']['threshold']}"
-            # self.show.ids.oaiou.text = f"{self.config['oa']['iou']}"
+            self.show.ids.oathresh.text = f"{self.config['obstacle_avoidance']['pid_parameters']['threshold']}"
+            self.show.ids.oaiou.text    = f"{self.config['obstacle_avoidance']['pid_parameters']['iou']}"
         self.setting_popup.open()
+        
     def throtle_p(self):
         if self.ids.throtleP.state == "normal":
             logging.debug('Update Throtle to Eco Mode')

@@ -26,10 +26,10 @@ class Serial_Node(Node):
 
         self.timer_ = self.create_timer(0.01, self.timer_callback)
 
-        self.yaml_filepath = '/home/tkd/ros2_ws/src/timunv2_bringup/config/pidparams.yaml'
+        self.yaml_filepath = '/home/tkd/timunv2_ws/src/timunv2_bringup/config/pidparams.yaml'
 
         #Serial 
-        self.port = '/dev/ttyCDC'
+        self.port = '/dev/ttyACM1'
         self.baudrate = 115200
         self.ser = None
         self.communication_status_now = False
@@ -119,6 +119,15 @@ class Serial_Node(Node):
             print(f"Error reading YAML file: {str(e)}")
 
     def serial_write(self):
+        def float_to_int16(value):
+            # Scale the float value and convert to integer
+            scaled_value = int(value * 100)  # Scale by 100 for precision, adjust as needed
+            # Ensure the value fits into a signed short integer range (-32,768 to 32,767)
+            if scaled_value < -32768:
+                scaled_value = -32768
+            elif scaled_value > 32767:
+                scaled_value = 32767
+            return scaled_value
         # 0
         message_linear_x = self.vel_linear_converted[0].to_bytes(2, byteorder='big', signed=True)
         message_linear_y = self.vel_linear_converted[1].to_bytes(2, byteorder='big', signed=True)
@@ -134,18 +143,31 @@ class Serial_Node(Node):
         message_set_point_roll = self.set_point_converted[2].to_bytes(2, byteorder='big', signed=True)
         message_set_point_depth = self.set_point_converted[3].to_bytes(2, byteorder='big', signed=True)
         # 22
-        message_kp_yaw = self.k_yaw[0].to_bytes(2, byteorder='big', signed=True)
-        message_ki_yaw = self.k_yaw[1].to_bytes(2, byteorder='big', signed=True)
-        message_kd_yaw = self.k_yaw[2].to_bytes(2, byteorder='big', signed=True)
-        message_kp_pitch = self.k_pitch[0].to_bytes(2, byteorder='big', signed=True)
-        message_ki_pitch = self.k_pitch[1].to_bytes(2, byteorder='big', signed=True)
-        message_kd_pitch = self.k_pitch[2].to_bytes(2, byteorder='big', signed=True)
-        message_kp_roll = self.k_roll[0].to_bytes(2, byteorder='big', signed=True)
-        message_ki_roll = self.k_roll[1].to_bytes(2, byteorder='big', signed=True)
-        message_kd_roll = self.k_roll[2].to_bytes(2, byteorder='big', signed=True)
-        message_kp_depth = self.k_depth[0].to_bytes(2, byteorder='big', signed=True)
-        message_ki_depth = self.k_depth[1].to_bytes(2, byteorder='big', signed=True)
-        message_kd_depth = self.k_depth[2].to_bytes(2, byteorder='big', signed=True)
+        # message_kp_yaw = self.k_yaw[0].to_bytes(2, byteorder='big', signed=True)
+        # message_ki_yaw = self.k_yaw[1].to_bytes(2, byteorder='big', signed=True)
+        # message_kd_yaw = self.k_yaw[2].to_bytes(2, byteorder='big', signed=True)
+        # message_kp_pitch = self.k_pitch[0].to_bytes(2, byteorder='big', signed=True)
+        # message_ki_pitch = self.k_pitch[1].to_bytes(2, byteorder='big', signed=True)
+        # message_kd_pitch = self.k_pitch[2].to_bytes(2, byteorder='big', signed=True)
+        # message_kp_roll = self.k_roll[0].to_bytes(2, byteorder='big', signed=True)
+        # message_ki_roll = self.k_roll[1].to_bytes(2, byteorder='big', signed=True)
+        # message_kd_roll = self.k_roll[2].to_bytes(2, byteorder='big', signed=True)
+        # message_kp_depth = self.k_depth[0].to_bytes(2, byteorder='big', signed=True)
+        # message_ki_depth = self.k_depth[1].to_bytes(2, byteorder='big', signed=True)
+        # message_kd_depth = self.k_depth[2].to_bytes(2, byteorder='big', signed=True)
+        # Convert floating-point numbers to two-byte integers and then to bytes
+        message_kp_yaw = struct.pack('>h', float_to_int16(self.k_yaw[0]))
+        message_ki_yaw = struct.pack('>h', float_to_int16(self.k_yaw[1]))
+        message_kd_yaw = struct.pack('>h', float_to_int16(self.k_yaw[2]))
+        message_kp_pitch = struct.pack('>h', float_to_int16(self.k_pitch[0]))
+        message_ki_pitch = struct.pack('>h', float_to_int16(self.k_pitch[1]))
+        message_kd_pitch = struct.pack('>h', float_to_int16(self.k_pitch[2]))
+        message_kp_roll = struct.pack('>h', float_to_int16(self.k_roll[0]))
+        message_ki_roll = struct.pack('>h', float_to_int16(self.k_roll[1]))
+        message_kd_roll = struct.pack('>h', float_to_int16(self.k_roll[2]))
+        message_kp_depth = struct.pack('>h', float_to_int16(self.k_depth[0]))
+        message_ki_depth = struct.pack('>h', float_to_int16(self.k_depth[1]))
+        message_kd_depth = struct.pack('>h', float_to_int16(self.k_depth[2]))
         # 46
         message_lumen_pwr = self.lumen_pwr.to_bytes(2, byteorder='big', signed=True)
         # 48
@@ -209,8 +231,8 @@ class Serial_Node(Node):
                 self.sensor.imu_roll= received_roll/10.0
                 self.sensor.depth = received_depth/100.0
                 self.sensor.pressure_inside = received_pressure/100.0
-                self.sensor.batt1_volt = received_batt1/100.0
-                self.sensor.batt2_volt = received_batt2/100.0
+                self.sensor.batter_nuc = received_batt1/100.0
+                self.sensor.battery_robot = received_batt2/100.0
 
             self.read_status_now = True
 

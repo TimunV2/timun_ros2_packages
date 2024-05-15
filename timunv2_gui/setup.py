@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            "gui_node = timunv2_gui.gui:main"
         ],
     },
 )
