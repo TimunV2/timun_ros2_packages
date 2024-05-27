@@ -1,8 +1,11 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.duration import Duration
+
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Twist
 from timunv2_interfaces.msg import JoyUtilities
+from timunv2_interfaces.msg import HeartBeat
 
 mov_button_new = False
 mov_button_old = False
@@ -11,16 +14,24 @@ class JoySubNode(Node):
     def __init__(self):
         super().__init__("joy_sub_node")
         self.get_logger().info("joy_sub_node has been started")
+        #subscriber
         self.joy_sub_ = self.create_subscription(Joy, "/joy", self.joy_callback, 10)
+        self.rov_heartbeat_sub_ = self.create_subscription(HeartBeat, "/rov_heartbeat", self.heartbeat_callback, 10)
+
+        #publisher
         self.joy_cmd_vel_pub_ = self.create_publisher(Twist, "/joy_cmd_vel", 10)
         self.joy_cmd_utl_pub_ = self.create_publisher(JoyUtilities, "/joy_cmd_utl", 10)
+        self.joy_heartbeat_pub_ = self.create_publisher(HeartBeat, "/joy_heartbeat", 10)
 
         #publish at 100hz
-        self.timer_ = self.create_timer(0.01, self.publish_messages)
+        self.timer_ = self.create_timer(0.01, self.publish_main_messages)
+        #publish at 1hz
+        self.timer1_ = self.create_timer(1, self.heartbeat_check)        
 
         #pub message variable
         self.cmd_vel = Twist()
         self.cmd_utl = JoyUtilities()
+        self.heartbeat = HeartBeat()
 
         #primary variable
         self.lumen_pwr = 0
@@ -47,6 +58,39 @@ class JoySubNode(Node):
         self.stabilize = False
         self.depthhold = False
         self.r3_button = False
+
+        #heartbeat variable
+        self.last_heartbeat_time = self.get_clock().now()
+        self.heartbeat_status = False
+        self.last_heartbeat_status = False
+        self.heartbeat_sequence = 0
+
+    def heartbeat_callback(self, msg: HeartBeat):
+        self.heartbeat_status = True
+        self.last_heartbeat_time = self.get_clock().now()
+        if self.heartbeat_status == True and self.last_heartbeat_status == False :
+            # self.get_logger().info(f'Heartbeat received with sequence: {msg.heartbeat}')
+            self.get_logger().info(f'Heartbeat received, Rov connection established..')
+        self.last_heartbeat_status = self.heartbeat_status
+
+    def heartbeat_check(self):
+        current_time = self.get_clock().now()
+        if (current_time - self.last_heartbeat_time) > Duration(seconds=3):
+            self.heartbeat_status = False
+            if self.last_heartbeat_status == True and self.heartbeat_status == False :
+                self.get_logger().warn('Heartbeat not received in last 3 seconds!, Rov connection lost..')
+                self.failsafe()
+
+        self.last_heartbeat_status = self.heartbeat_status
+        self.heartbeat.heartbeat = self.heartbeat_sequence
+        self.joy_heartbeat_pub_.publish(self.heartbeat)
+        self.heartbeat_sequence += 1
+    
+    def failsafe(self):
+        self.arm_hardware = False
+        self.arm_software = False
+        self.movement_mode = 0
+        self.operation_mode = 0
 
     def joy_callback(self, msg: Joy):
         #analog sticks to velocity
@@ -123,7 +167,7 @@ class JoySubNode(Node):
         #r3 button as IMU reset
         self.r3_button = bool(msg.buttons[11])
 
-    def publish_messages(self):
+    def publish_main_messages(self):
         self.cmd_utl.lumen = self.lumen_pwr
         self.cmd_utl.arm_hw = self.arm_hardware
         self.cmd_utl.arm_sw = self.arm_software
@@ -136,7 +180,7 @@ class JoySubNode(Node):
 
         self.joy_cmd_vel_pub_.publish(self.cmd_vel)
         self.joy_cmd_utl_pub_.publish(self.cmd_utl)
-
+    
 
 def main(args=None):
     rclpy.init(args=args)

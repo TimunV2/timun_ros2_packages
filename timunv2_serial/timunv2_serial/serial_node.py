@@ -19,7 +19,7 @@ class Serial_Node(Node):
         #subscriber
         self.master_cmd_vel_sub_ = self.create_subscription(Twist, "/master_cmd_vel", self.master_cmd_vel_callback, 10)
         self.master_set_point_sub_ = self.create_subscription(SetPoint, "/master_set_point", self.master_set_point_callback, 10)
-        # self.pid_const_sub_ = self.create_subscription(PIDConstant, "/pid_constant", self.pid_const_callback, 10)
+
         #publisher
         self.joy_cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.joy_cmd_utl_callback, 10)
         self.serial_sensor_pub_ = self.create_publisher(SensorData, "serial_sensor_data", 10)
@@ -30,7 +30,7 @@ class Serial_Node(Node):
 
         #Serial 
         # self.port = '/dev/serial/by-id/usb-STM32_Virtual_ComPort_Љ_STMicroelectronics-if00'
-        self.port = '/dev/serial/by-id/usb-STMicroelectronics_STM32_Virtual_ComPort_356536713431-if00'
+        self.port = '/dev/serial/by-id/usb-STMicroelectronics_STM32_Virtual_ComPort_3265307D3331-if00'
         self.baudrate = 115200
         self.ser = None
         self.communication_status_now = False
@@ -202,9 +202,9 @@ class Serial_Node(Node):
 
     def serial_read(self):
         try:
-            received_data = self.ser.read(14)
+            received_data = self.ser.read(30)
             if received_data:
-                received_yaw, received_pitch, received_roll, received_depth, received_pressure, received_batt1, received_batt2  = struct.unpack('hhhhhhh', received_data)
+                received_yaw, received_pitch, received_roll, received_depth, received_pressure, received_batt1, received_batt2, received_thruster_h_fr, received_thruster_h_fl, received_thruster_h_br, received_thruster_h_bl, received_thruster_v_fr, received_thruster_v_fl, received_thruster_v_br, received_thruster_v_bl  = struct.unpack('hhhhhhhhhhhhhhh', received_data)
                 self.sensor.imu_yaw = received_yaw/10.0
                 self.sensor.imu_pitch = received_pitch/10.0
                 self.sensor.imu_roll= received_roll/10.0
@@ -212,6 +212,14 @@ class Serial_Node(Node):
                 self.sensor.pressure_inside = received_pressure/100.0
                 self.sensor.batt1_volt = received_batt1/100.0
                 self.sensor.batt2_volt = received_batt2/100.0
+                self.sensor.thruster_h_fr = received_thruster_h_fr
+                self.sensor.thruster_h_fl = received_thruster_h_fl
+                self.sensor.thruster_h_br = received_thruster_h_br
+                self.sensor.thruster_h_bl = received_thruster_h_bl
+                self.sensor.thruster_v_fr = received_thruster_v_fr
+                self.sensor.thruster_v_fl = received_thruster_v_fl
+                self.sensor.thruster_v_br = received_thruster_v_br
+                self.sensor.thruster_v_bl = received_thruster_v_bl
 
             self.read_status_now = True
 

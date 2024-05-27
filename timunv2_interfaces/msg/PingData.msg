@@ -1,0 +1,2 @@
+float32 ranges_scan
+float32 confidence
