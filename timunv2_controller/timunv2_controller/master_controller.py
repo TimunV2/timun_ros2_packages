@@ -1,12 +1,14 @@
 #import necessary library
 import rclpy
 from rclpy.node import Node
+from rclpy.duration import Duration
 
 #import necessary messages
 from geometry_msgs.msg import Twist
 from timunv2_interfaces.msg import JoyUtilities
 from timunv2_interfaces.msg import SetPoint
 from timunv2_interfaces.msg import SensorData
+from timunv2_interfaces.msg import HeartBeat
 
 class MasterController(Node):
     def __init__(self):
@@ -17,11 +19,12 @@ class MasterController(Node):
         self.joy_cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.joy_cmd_utl_callback, 10)
         self.serial_sensor_data_sub_ = self.create_subscription(SensorData, "/serial_sensor_data", self.serial_sensor_data_callback, 10)
         self.pipeline_cmd_vel_sub_ = self.create_subscription(Twist, "/pipeline_cmd_vel", self.pipeline_cmd_vel_callback, 10)
-        
+
         #init publisher
         self.master_cmd_vel_pub_ = self.create_publisher(Twist, "/master_cmd_vel", 10)
         self.master_setpoint_pub_ = self.create_publisher(SetPoint, "master_set_point", 10)
 
+        #timer loop
         self.timer_ = self.create_timer(0.01, self.timer_callback)  # 0.01 seconds (100 Hz)
 
         #velocity command variable
@@ -64,10 +67,10 @@ class MasterController(Node):
         self.fully_assist_old = False
 
         #set point drift sensitivity 
-        self.yaw_drift_scale = 1.0
-        self.pitch_drift_scale = 1.0
-        self.roll_drift_scale = 1.0
-        self.depth_drift_scale = 1.0
+        self.yaw_drift_scale = 0.3
+        self.pitch_drift_scale = -0.3
+        self.roll_drift_scale = -0.3
+        self.depth_drift_scale = -0.15
 
         #angular vel sensitivity   X , Y ,  Z
         self.cmd_angular_scale = [1.0, 1.0, 1.0]
@@ -177,7 +180,7 @@ class MasterController(Node):
             self.roll_setpoint -= 360
         elif self.roll_setpoint < -180 :
             self.roll_setpoint += 360
-        if self.depth_setpoint > 0.0 :
+        if self.depth_setpoint < 0.0 :
             self.depth_setpoint = 0.0
 
     def operation_mode_(self):
@@ -191,10 +194,10 @@ class MasterController(Node):
 
             # Temp / Master Changes
             #setpoint drift from joy
-            self.master_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
-            self.master_cmd_vel.angular.x =self.joy_cmd_vel.angular.x
-            self.master_cmd_vel.angular.y =self.joy_cmd_vel.angular.y
-            self.master_cmd_vel.angular.z =self.joy_cmd_vel.angular.z
+            self.temp_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
+            self.temp_cmd_vel.angular.x =self.joy_cmd_vel.angular.x
+            self.temp_cmd_vel.angular.y =self.joy_cmd_vel.angular.y
+            self.temp_cmd_vel.angular.z =self.joy_cmd_vel.angular.z
 
         elif self.movement_mode == 3 and self.operation_mode == 1: #auto 1 (Pipefoll 1 Heading >> cv, Lateral >> joy, Throtle >> joy)
             #throtle and lateral from joy
@@ -203,9 +206,9 @@ class MasterController(Node):
 
             # Temp / Master Changes
             #depth setpoint drift from joy
-            self.master_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
+            self.temp_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
             #yaw setpoint drift from cv
-            self.master_cmd_vel.angular.z =self.pipe_cmd_vel.angular.z
+            self.temp_cmd_vel.angular.z =self.pipe_cmd_vel.angular.z
 
         elif self.movement_mode == 3 and self.operation_mode == 2: #auto 2 (Pipefoll 2 Heading >> joy, Lateral >> cv, Throtle >> joy)
             #lateral from cv
@@ -215,11 +218,11 @@ class MasterController(Node):
 
             # Temp / Master Changes
             #depth setpoint drift from joy
-            self.master_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
+            self.temp_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
             #yaw setpoint drift from joy
-            self.master_cmd_vel.angular.z =self.joy_cmd_vel.angular.z
+            self.temp_cmd_vel.angular.z =self.joy_cmd_vel.angular.z
 
-        elif self.movement_mode == 3 and self.operation_mode == 3: #auto 3 (Pipefoll 3 Heading >> cv, Lateral >> cv, Throtle >> joy)
+        elif self.movement_mode == 1 and self.operation_mode == 3: #auto 3 (Pipefoll 3 Heading >> cv, Lateral >> cv, Throtle >> joy)
             #lateral from cv
             self.master_cmd_vel.linear.x = self.pipe_cmd_vel.linear.x
             #throtle from joy
@@ -227,11 +230,11 @@ class MasterController(Node):
 
             # Temp / Master Changes
             #depth setpoint drift from joy
-            self.master_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
+            self.temp_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
             #yaw setpoint drift from cv
-            self.master_cmd_vel.angular.z =self.pipe_cmd_vel.angular.z
+            self.temp_cmd_vel.angular.z =self.pipe_cmd_vel.angular.z
 
-        elif self.movement_mode == 3 and self.operation_mode == 4: #auto 4 (Pipefoll 4 Heading >> cv, Lateral >> cv, Throtle >> cv)
+        elif self.movement_mode == 1 and self.operation_mode == 4: #auto 4 (Pipefoll 4 Heading >> cv, Lateral >> cv, Throtle >> cv)
             #lateral from cv
             self.master_cmd_vel.linear.x = self.pipe_cmd_vel.linear.x
             #throtle from joy
@@ -239,9 +242,9 @@ class MasterController(Node):
 
             # Temp / Master Changes
             #depth setpoint drift from joy
-            self.master_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
+            self.temp_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
             #yaw setpoint drift from joy
-            self.master_cmd_vel.angular.z =self.pipe_cmd_vel.angular.z
+            self.temp_cmd_vel.angular.z =self.pipe_cmd_vel.angular.z
 
         if self.arm_software == False :
             self.master_cmd_vel.linear.x = 0.0
@@ -253,7 +256,6 @@ class MasterController(Node):
 
         elif self.arm_software == True :
             pass
-
 
     def mixed_vel_cmd(self):
         pass
