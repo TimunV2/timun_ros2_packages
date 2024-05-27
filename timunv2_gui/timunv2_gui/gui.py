@@ -56,12 +56,12 @@ class GuiNode(Node):
         self.publisher_param    = self.create_publisher(ParamData,"/gui_param",10)
         # self.subscription       = self.create_subscription(SensorData,'/serial_sensor_data',
         #                                              self.listener_callback,10)
-        # self.subscription2      = self.create_subscription(Image, '/camera_front', 
-        #                                         self.listener_camF, 10)
+        self.subscription2      = self.create_subscription(Image, '/camera_front', 
+                                                self.listener_camF, 10)
         # self.status_sub         = self.create_subscription(JoyUtilities,"/joy_cmd_utl",
         #                                                self.status_callback, 10)
         # self.subscription
-        # self.subscription2
+        self.subscription2
         self.cv_bridge = CvBridge()
     def status_callback(self,msg):
         self.arm_hw     = msg.arm_hw
@@ -209,6 +209,7 @@ class TimunLayout(Widget):
             self.msg2.oa_threshold      = float(self.config['obstacle_avoidance']['pid_parameters']['threshold'])
             self.msg2.oa_iou            = float(self.config['obstacle_avoidance']['pid_parameters']['iou'])
         self.node.publisher_param.publish(self.msg2)
+
     def update(self,dt):
         rclpy.spin_once(self.node, timeout_sec=0.05)
         r,p,y,d,ra,bat_n,bat_r,camF,camB,arm_hw,arm_sw,mov_mode = self.node.send_var()
@@ -219,7 +220,7 @@ class TimunLayout(Widget):
         if np.any(cam !=None):
             texture = Texture.create(size=(cam.shape[1], cam.shape[0]), colorfmt='bgr')
             texture.blit_buffer(cam.tobytes(), colorfmt='bgr', bufferfmt='ubyte')
-            self.ids.cam_gui.texture = texture
+            self.ids.cam_main.texture = texture
         else:
             self.count_cam += 1
             if self.count_cam == 200:

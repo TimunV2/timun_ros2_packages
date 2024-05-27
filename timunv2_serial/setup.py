@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             "serial_node = timunv2_serial.serial_node:main",
+            "ping_node = timunv2_serial.ping_node:main",
             "bluerov2_mavlink = timunv2_serial.bluerov2_mavlink:main"
         ],
     },

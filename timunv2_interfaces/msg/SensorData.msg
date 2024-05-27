@@ -7,3 +7,11 @@ float32 confidence
 float32 pressure_inside
 float32 batter_nuc
 float32 battery_robot
+int16 thruster_h_fr
+int16 thruster_h_fl
+int16 thruster_h_br
+int16 thruster_h_bl
+int16 thruster_v_fr
+int16 thruster_v_fl
+int16 thruster_v_br
+int16 thruster_v_bl

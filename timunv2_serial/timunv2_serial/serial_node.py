@@ -1,6 +1,7 @@
 #import necessary library
 import rclpy
 from rclpy.node import Node
+from rclpy.duration import Duration
 import serial
 import struct
 import os
@@ -12,6 +13,8 @@ from geometry_msgs.msg import Twist
 from timunv2_interfaces.msg import SetPoint
 from timunv2_interfaces.msg import JoyUtilities
 from timunv2_interfaces.msg import SensorData
+from timunv2_interfaces.msg import HeartBeat
+from timunv2_interfaces.msg import PingData
 
 class Serial_Node(Node):
     def __init__(self):
@@ -20,12 +23,16 @@ class Serial_Node(Node):
         #subscriber
         self.master_cmd_vel_sub_ = self.create_subscription(Twist, "/master_cmd_vel", self.master_cmd_vel_callback, 10)
         self.master_set_point_sub_ = self.create_subscription(SetPoint, "/master_set_point", self.master_set_point_callback, 10)
-        # self.pid_const_sub_ = self.create_subscription(PIDConstant, "/pid_constant", self.pid_const_callback, 10)
-        #publisher
+        self.joy_heartbeat_sub_ = self.create_subscription(HeartBeat, "/joy_heartbeat", self.heartbeat_callback, 10)
         self.joy_cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.joy_cmd_utl_callback, 10)
+        #publisher
         self.serial_sensor_pub_ = self.create_publisher(SensorData, "/serial_sensor_data", 10)
+        self.ping_sensor_pub_ = self.create_publisher(PingData, "/ping_data", 10)
+        self.rov_heartbeat_pub_ = self.create_publisher(HeartBeat, "/rov_heartbeat", 10)
 
         self.timer_ = self.create_timer(0.01, self.timer_callback)
+        # self.timer1_ = self.create_timer(0.1, self.timer1_callback) # for pinger
+        self.timer1_ = self.create_timer(1, self.heartbeat_check) # 1 sec interval
 
         self.yaml_filepath = '/home/tkd/timunv2_ws/src/timunv2_bringup/config/pidparams.yaml'
 
@@ -41,13 +48,15 @@ class Serial_Node(Node):
         self.read_status_last = True
 
         #BrPing
-        self.ping_port = "/dev/ttyUSB0"
-        self.myPing = Ping1D()
-        self.myPing.connect_serial(self.ping_port,115200)
-        self.ping_status_now = False
-        self.ping_status_last = True
-        if self.myPing.initialize() is False:
-            self.get_logger().error(f"Failed to connect Echo Sounder")
+        # self.ping_port = "/dev/ttyBRPING"
+        # self.myPing = Ping1D()
+        # self.myPing.connect_serial(self.ping_port,115200)
+        # self.ping_status_now = False
+        # self.ping_status_last = True
+        # self.ping_attach = True
+        # if self.myPing.initialize() is False:
+        #     self.get_logger().error(f"Failed to connect Echo Sounder")
+        #     self.ping_attach = False
 
         #velocity converted          x, y, z
         self.vel_linear_converted = [0, 0, 0]
@@ -74,14 +83,58 @@ class Serial_Node(Node):
 
         #sensor data variable
         self.sensor = SensorData()
+        self.ping = SensorData()
+
+        #heartbeat variable
+        self.last_heartbeat_time = self.get_clock().now()
+        self.heartbeat_status = False
+        self.last_heartbeat_status = False
+        self.heartbeat = HeartBeat()
+        self.heartbeat_sequence = 0
+
+    def heartbeat_callback(self, msg: HeartBeat):
+        self.heartbeat_status = True
+        self.last_heartbeat_time = self.get_clock().now()
+        if self.heartbeat_status == True and self.last_heartbeat_status == False :
+            # self.get_logger().info(f'Heartbeat received with sequence: {msg.heartbeat}')
+            self.get_logger().info(f'Heartbeat received, Base connection established..')
+        self.last_heartbeat_status = self.heartbeat_status
+
+    def heartbeat_check(self):
+        current_time = self.get_clock().now()
+        if (current_time - self.last_heartbeat_time) > Duration(seconds=3):
+            self.heartbeat_status = False
+            if self.last_heartbeat_status == True and self.heartbeat_status == False :
+                self.get_logger().warn('Heartbeat not received in last 3 seconds!, Base connection lost..')
+                self.failsafe()
+        self.last_heartbeat_status = self.heartbeat_status
+
+        self.heartbeat.heartbeat = self.heartbeat_sequence
+        self.rov_heartbeat_pub_.publish(self.heartbeat)
+        self.heartbeat_sequence += 1
+
+    def failsafe(self):
+        self.vel_linear_converted[0] = 0
+        self.vel_linear_converted[1] = 0
+        self.vel_linear_converted[2] = 0
+        self.vel_angular_converted[0] = 0
+        self.vel_angular_converted[1] = 0
+        self.vel_angular_converted[2] = 0
+        self.arm_hardware = False
+        self.arm_software = False
+        self.movement_mode = 0
+        self.operation_mode = 0
 
     def master_cmd_vel_callback(self, msg: Twist):
-        self.vel_linear_converted[0] = int(500*self.max_throtle_scale*msg.linear.x)
-        self.vel_linear_converted[1] = int(500*self.max_throtle_scale*msg.linear.y)
-        self.vel_linear_converted[2] = int(500*self.max_throtle_scale*msg.linear.z)
-        self.vel_angular_converted[0] = int(500*self.max_throtle_scale*msg.angular.x)
-        self.vel_angular_converted[1] = int(500*self.max_throtle_scale*msg.angular.y)
-        self.vel_angular_converted[2] = int(500*self.max_throtle_scale*msg.angular.z)
+        if self.heartbeat_status == True :
+            self.vel_linear_converted[0] = int(500*self.max_throtle_scale*msg.linear.x)
+            self.vel_linear_converted[1] = int(500*self.max_throtle_scale*msg.linear.y)
+            self.vel_linear_converted[2] = int(500*self.max_throtle_scale*msg.linear.z)
+            self.vel_angular_converted[0] = int(500*self.max_throtle_scale*msg.angular.x)
+            self.vel_angular_converted[1] = int(500*self.max_throtle_scale*msg.angular.y)
+            self.vel_angular_converted[2] = int(500*self.max_throtle_scale*msg.angular.z)
+        else :
+            pass            
 
     def master_set_point_callback(self, msg: SetPoint):
         self.set_point_converted[0] = int(msg.set_point_yaw)
@@ -93,11 +146,15 @@ class Serial_Node(Node):
         self.max_throtle_scale = msg.max_throtle
         self.max_throtle_scale_converted = int(500*self.max_throtle_scale)
         self.lumen_pwr = msg.lumen
-        self.arm_hardware = msg.arm_hw
-        self.arm_software = msg.arm_sw
         self.movement_mode = msg.mov_mode
         self.operation_mode = msg.opr_mode
         self.imu_reset = msg.imu_reset
+        if self.heartbeat_status == True :
+            self.arm_hardware = msg.arm_hw
+            self.arm_software = msg.arm_sw
+        else :
+            self.arm_hardware = 0
+            self.arm_software = 0
 
     def pid_const_yaml(self):
         try:
@@ -153,18 +210,6 @@ class Serial_Node(Node):
         message_set_point_roll = self.set_point_converted[2].to_bytes(2, byteorder='big', signed=True)
         message_set_point_depth = self.set_point_converted[3].to_bytes(2, byteorder='big', signed=True)
         # 22
-        # message_kp_yaw = self.k_yaw[0].to_bytes(2, byteorder='big', signed=True)
-        # message_ki_yaw = self.k_yaw[1].to_bytes(2, byteorder='big', signed=True)
-        # message_kd_yaw = self.k_yaw[2].to_bytes(2, byteorder='big', signed=True)
-        # message_kp_pitch = self.k_pitch[0].to_bytes(2, byteorder='big', signed=True)
-        # message_ki_pitch = self.k_pitch[1].to_bytes(2, byteorder='big', signed=True)
-        # message_kd_pitch = self.k_pitch[2].to_bytes(2, byteorder='big', signed=True)
-        # message_kp_roll = self.k_roll[0].to_bytes(2, byteorder='big', signed=True)
-        # message_ki_roll = self.k_roll[1].to_bytes(2, byteorder='big', signed=True)
-        # message_kd_roll = self.k_roll[2].to_bytes(2, byteorder='big', signed=True)
-        # message_kp_depth = self.k_depth[0].to_bytes(2, byteorder='big', signed=True)
-        # message_ki_depth = self.k_depth[1].to_bytes(2, byteorder='big', signed=True)
-        # message_kd_depth = self.k_depth[2].to_bytes(2, byteorder='big', signed=True)
         # Convert floating-point numbers to two-byte integers and then to bytes
         message_kp_yaw = struct.pack('>h', float_to_int16(self.k_yaw[0]))
         message_ki_yaw = struct.pack('>h', float_to_int16(self.k_yaw[1]))
@@ -233,9 +278,9 @@ class Serial_Node(Node):
 
     def serial_read(self):
         try:
-            received_data = self.ser.read(14)
+            received_data = self.ser.read(30)
             if received_data:
-                received_yaw, received_pitch, received_roll, received_depth, received_pressure, received_batt1, received_batt2  = struct.unpack('hhhhhhh', received_data)
+                received_yaw, received_pitch, received_roll, received_depth, received_pressure, received_batt1, received_batt2, received_thruster_h_fr, received_thruster_h_fl, received_thruster_h_br, received_thruster_h_bl, received_thruster_v_fr, received_thruster_v_fl, received_thruster_v_br, received_thruster_v_bl  = struct.unpack('hhhhhhhhhhhhhhh', received_data)
                 self.sensor.imu_yaw = received_yaw/10.0
                 self.sensor.imu_pitch = received_pitch/10.0
                 self.sensor.imu_roll= received_roll/10.0
@@ -243,6 +288,14 @@ class Serial_Node(Node):
                 self.sensor.pressure_inside = received_pressure/100.0
                 self.sensor.batter_nuc = received_batt1/100.0
                 self.sensor.battery_robot = received_batt2/100.0
+                self.sensor.thruster_h_fr = received_thruster_h_fr
+                self.sensor.thruster_h_fl = received_thruster_h_fl
+                self.sensor.thruster_h_br = received_thruster_h_br
+                self.sensor.thruster_h_bl = received_thruster_h_bl
+                self.sensor.thruster_v_fr = received_thruster_v_fr
+                self.sensor.thruster_v_fl = received_thruster_v_fl
+                self.sensor.thruster_v_br = received_thruster_v_br
+                self.sensor.thruster_v_bl = received_thruster_v_bl
 
             self.read_status_now = True
 
@@ -250,25 +303,30 @@ class Serial_Node(Node):
             self.read_status_now = False
             if self.read_status_now == False and self.read_status_last == True:
                 self.get_logger().error(f"Error reading serial port: {str(e)}")
-        try:
-            received_ping = self.myPing.get_distance()
-            if received_ping:
-                self.sensor.ranges_scan = received_ping["distance"]
-                self.sensor.confidence = received_ping["confidence"]
-            self.ping_status_now = True
-        except Exception as e:
-            if self.read_status_now == False and self.read_status_last == True:
-                self.get_logger().error(f"Error reading ping data: {str(e)}")
-        self.ping_status_last = self.ping_status_now
-        self.read_status_last = self.read_status_now
-        
+            self.read_status_last = self.read_status_now
+
+    # def timer1_callback(self):
+    #     if self.ping_attach == True:
+    #         try:
+    #             received_ping = self.myPing.get_distance_simple()
+    #             if received_ping:
+    #                 self.ping.ranges_scan = float(received_ping["distance"])
+    #                 self.ping.confidence = float(received_ping["confidence"])
+    #             self.ping_status_now = True
+    #         except Exception as e:
+    #             if self.read_status_now == False and self.read_status_last == True:
+    #                 self.get_logger().error(f"Error reading ping data: {str(e)}")
+    #         self.ping_status_last = self.ping_status_now
 
     def timer_callback(self):
         # self.get_logger().info("enter timer callback")
-        self.pid_const_yaml()
-        self.serial_write()
-        self.serial_read()
-        self.serial_sensor_pub_.publish(self.sensor)
+        if self.heartbeat_status == True :
+            self.pid_const_yaml()
+            self.serial_write()
+            self.serial_read()    
+            self.serial_sensor_pub_.publish(self.sensor)
+        else :
+            pass
 
 def main(args=None):
     rclpy.init(args=args)

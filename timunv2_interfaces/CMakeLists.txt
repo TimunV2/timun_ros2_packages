@@ -16,6 +16,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SetPoint.msg"
   "msg/PipeDetect.msg"
   "msg/ParamData.msg"
+  "msg/HeartBeat.msg"
+  "msg/PingData.msg"
 )
 
 ament_export_dependencies(rosidl_default_runtime)
