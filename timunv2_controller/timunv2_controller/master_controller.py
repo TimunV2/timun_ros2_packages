@@ -222,7 +222,7 @@ class MasterController(Node):
             #yaw setpoint drift from joy
             self.temp_cmd_vel.angular.z =self.joy_cmd_vel.angular.z
 
-        elif self.movement_mode == 1 and self.operation_mode == 3: #auto 3 (Pipefoll 3 Heading >> cv, Lateral >> cv, Throtle >> joy)
+        elif self.movement_mode == 3 and self.operation_mode == 3: #auto 3 (Pipefoll 3 Heading >> cv, Lateral >> cv, Throtle >> joy)
             #lateral from cv
             self.master_cmd_vel.linear.x = self.pipe_cmd_vel.linear.x
             #throtle from joy
@@ -234,7 +234,7 @@ class MasterController(Node):
             #yaw setpoint drift from cv
             self.temp_cmd_vel.angular.z =self.pipe_cmd_vel.angular.z
 
-        elif self.movement_mode == 1 and self.operation_mode == 4: #auto 4 (Pipefoll 4 Heading >> cv, Lateral >> cv, Throtle >> cv)
+        elif self.movement_mode == 3 and self.operation_mode == 4: #auto 4 (Pipefoll 4 Heading >> cv, Lateral >> cv, Throtle >> cv)
             #lateral from cv
             self.master_cmd_vel.linear.x = self.pipe_cmd_vel.linear.x
             #throtle from joy

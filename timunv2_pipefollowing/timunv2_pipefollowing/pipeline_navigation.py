@@ -19,7 +19,7 @@ class PipelineNav(Node):
         self.pid_compute_timer_ = self.create_timer(0.01, self.pid_compute)
         self.pid_update_param_timer_ = self.create_timer(0.1, self.pid_param_yaml)
 
-        self.yaml_filepath = '/home/hasan/ros2_ws/src/timunv2_bringup/config/pidparams.yaml'
+        self.yaml_filepath = '/home/tkd/timunv2_ws/src/timunv2_bringup/config/pidparams.yaml'
 
         #pub message variable
         self.pipe_cmd_vel = Twist()

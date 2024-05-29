@@ -21,8 +21,8 @@ pipeline_navigation:
     ki_heading: 0.0
     ki_lateral: 0.0
     ki_range: 0.0
-    kp_heading: -0.001
-    kp_lateral: -0.001
+    kp_heading: 0.003
+    kp_lateral: -0.01
     kp_range: 0.0
     threshold: 1.1
     throtle: 0.3

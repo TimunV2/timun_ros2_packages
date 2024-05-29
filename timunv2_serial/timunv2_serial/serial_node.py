@@ -31,7 +31,7 @@ class Serial_Node(Node):
         self.rov_heartbeat_pub_ = self.create_publisher(HeartBeat, "/rov_heartbeat", 10)
 
         self.timer_ = self.create_timer(0.01, self.timer_callback)
-        # self.timer1_ = self.create_timer(0.1, self.timer1_callback) # for pinger
+        self.timer1_ = self.create_timer(0.05, self.timer1_callback) # publish
         self.timer1_ = self.create_timer(1, self.heartbeat_check) # 1 sec interval
 
         self.yaml_filepath = '/home/tkd/timunv2_ws/src/timunv2_bringup/config/pidparams.yaml'
@@ -305,18 +305,8 @@ class Serial_Node(Node):
                 self.get_logger().error(f"Error reading serial port: {str(e)}")
             self.read_status_last = self.read_status_now
 
-    # def timer1_callback(self):
-    #     if self.ping_attach == True:
-    #         try:
-    #             received_ping = self.myPing.get_distance_simple()
-    #             if received_ping:
-    #                 self.ping.ranges_scan = float(received_ping["distance"])
-    #                 self.ping.confidence = float(received_ping["confidence"])
-    #             self.ping_status_now = True
-    #         except Exception as e:
-    #             if self.read_status_now == False and self.read_status_last == True:
-    #                 self.get_logger().error(f"Error reading ping data: {str(e)}")
-    #         self.ping_status_last = self.ping_status_now
+    def timer1_callback(self):
+        self.serial_sensor_pub_.publish(self.sensor)
 
     def timer_callback(self):
         # self.get_logger().info("enter timer callback")
@@ -324,7 +314,7 @@ class Serial_Node(Node):
             self.pid_const_yaml()
             self.serial_write()
             self.serial_read()    
-            self.serial_sensor_pub_.publish(self.sensor)
+            # self.serial_sensor_pub_.publish(self.sensor)
         else :
             pass
 

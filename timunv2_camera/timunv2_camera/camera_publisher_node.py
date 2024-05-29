@@ -31,7 +31,7 @@ class Camera_Publisher_Node(Node):
         # ret2, frame2 = self.cap2.read()
         if ret:
             try:
-                # frame = cv2.resize(frame, (640, 384))
+                frame = cv2.resize(frame, (640, 384))
                 msg = self.cv_bridge.cv2_to_imgmsg(frame, "bgr8")
                 self.publisher_.publish(msg)
                 # self.get_logger().info(f"Publishing1")

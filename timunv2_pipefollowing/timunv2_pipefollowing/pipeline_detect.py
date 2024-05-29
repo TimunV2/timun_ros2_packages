@@ -15,7 +15,7 @@ class PipelineDetect(Node):
     def __init__(self):
         super().__init__("pipeline_detect_node")
         self.get_logger().info("pipeline_detect_node has been started")
-        self.camera_sub_ = self.create_subscription(Image, "camera_front", self.image_callback,10)
+        self.camera_sub_ = self.create_subscription(Image, "camera_bottom", self.image_callback,10)
         self.cmd_utl_sub_ = self.create_subscription(JoyUtilities, "joy_cmd_utl", self.cmd_utl_callback,10)
         self.pipeline_pub_ = self.create_publisher(PipeDetect, "pipeline_value", 10)
         self.timer_ = self.create_timer(0.03, self.timer_callback)
@@ -31,7 +31,7 @@ class PipelineDetect(Node):
 
         #YOLO Model
         # self.model = YOLO('/home/hasan/ros2_ws/src/timunv2_pipefollowing/timunv2_pipefollowing/pipelinev8n-seg.pt')
-        self.model = YOLO('/home/hasan/ros2_ws/src/timunv2_pipefollowing/timunv2_pipefollowing/SelangYOLOV8n.pt')
+        self.model = YOLO('/home/tkd/timunv2_ws/src/timunv2_pipefollowing/timunv2_pipefollowing/SelangYOLOV8n.pt')
 
         #cv variable
         self.frame = None
@@ -60,7 +60,7 @@ class PipelineDetect(Node):
                 self.show_frame = self.frame
 
                 annotate_frame = results[0].plot()
-                cv2.imshow("YOLOv8 Tracking", annotate_frame)
+                # cv2.imshow("YOLOv8 Tracking", annotate_frame)
                 cv2.waitKey(1)
 
                 # Extract masks of the detected objects
@@ -70,7 +70,7 @@ class PipelineDetect(Node):
                             self.masked_frame = self.masked_frame.numpy() * 255
                             self.masked_frame = self.masked_frame.astype('uint8')
                 
-                cv2.imshow("Masked Frame", self.masked_frame)
+                # cv2.imshow("Masked Frame", self.masked_frame)
                 cv2.waitKey(1)
 
                 # Find contours and draw largest contour on final_mask
@@ -103,6 +103,7 @@ class PipelineDetect(Node):
                         x_lower_detect = int(np.mean(line_indices))
                         lower_detect = (x_lower_detect, frame_height - 10)
                     else:
+                        x_lower_detect = int(frame_width/2)
                         lower_detect = (int(frame_width/2), frame_height - 10)
 
                     # Draw dot and line for the detected pipe
