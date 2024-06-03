@@ -29,6 +29,10 @@ def generate_launch_description():
         package="timunv2_serial",
         executable="serial_node"
     )
+    record_node = Node(
+        package="timunv2_serial",
+        executable="record_node"
+    )
     ping_node = Node(
         package="timunv2_serial",
         executable="ping_node"
@@ -39,5 +43,6 @@ def generate_launch_description():
     ld.add_action(master_controller_node) #to select the final output of cmd velocity and set point
     ld.add_action(serial_node) #to convert and send the data to stm, and to read sensor data
     ld.add_action(ping_node) #to convert and send the data to stm, and to read sensor data
+    ld.add_action(record_node) #to publish utilities for data record
 
     return ld
