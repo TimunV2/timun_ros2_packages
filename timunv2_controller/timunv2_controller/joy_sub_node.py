@@ -160,7 +160,7 @@ class JoySubNode(Node):
         self.opr_button_new = bool(msg.buttons[2])
         if( self.opr_button_new == True and self.opr_button_old == False):
             self.operation_mode += 1
-            if(self.operation_mode > 4):
+            if(self.operation_mode > 5):
                 self.operation_mode = 0
         self.opr_button_old = self.opr_button_new
 
