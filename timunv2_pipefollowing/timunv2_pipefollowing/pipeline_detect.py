@@ -15,7 +15,7 @@ class PipelineDetect(Node):
     def __init__(self):
         super().__init__("pipeline_detect_node")
         self.get_logger().info("pipeline_detect_node has been started")
-        self.camera_sub_ = self.create_subscription(Image, "camera_bottom", self.image_callback,10)
+        self.camera_sub_ = self.create_subscription(Image, "camera_front", self.image_callback,10)
         self.cmd_utl_sub_ = self.create_subscription(JoyUtilities, "joy_cmd_utl", self.cmd_utl_callback,10)
         self.pipeline_pub_ = self.create_publisher(PipeDetect, "pipeline_value", 10)
         self.timer_ = self.create_timer(0.03, self.timer_callback)

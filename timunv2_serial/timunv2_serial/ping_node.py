@@ -12,6 +12,7 @@ class Ping_Node(Node):
 
         self.ping = PingData()
         self.ping_port = "/dev/ttyBRPING"
+        # self.ping_port = "/dev/ttyUSB0"
         self.myPing = Ping1D()
         self.myPing.connect_serial(self.ping_port,115200)
         self.ping_status_now = False

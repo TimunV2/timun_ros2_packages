@@ -37,7 +37,8 @@ class Serial_Node(Node):
         self.yaml_filepath = '/home/tkd/timunv2_ws/src/timunv2_bringup/config/pidparams.yaml'
 
         #Serial 
-        self.port = '/dev/ttyACM1'
+        # self.port = '/dev/ttyACM1'
+        self.port = '/dev/ttySTMserial'
         self.baudrate = 115200
         self.ser = None
         self.communication_status_now = False
@@ -284,7 +285,8 @@ class Serial_Node(Node):
                 self.sensor.imu_yaw = received_yaw/10.0
                 self.sensor.imu_pitch = received_pitch/10.0
                 self.sensor.imu_roll= received_roll/10.0
-                self.sensor.depth = received_depth/100.0
+                # self.sensor.depth = received_depth/100.0
+                self.sensor.depth = received_depth/1.0
                 self.sensor.pressure_inside = received_pressure/100.0
                 self.sensor.batter_nuc = received_batt1/100.0
                 self.sensor.battery_robot = received_batt2/100.0
