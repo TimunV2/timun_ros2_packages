@@ -47,7 +47,7 @@ def generate_launch_description():
 
     # ld.add_action(joy_node) #to read pilot input via joy stick like button and analog sticks
     # ld.add_action(joy_sub_node) #to convert button and axis to velocity and utility command
-    ld.add_action(camera_publisher_node_front) #to publish front camera
+    # ld.add_action(camera_publisher_node_front) #to publish front camera
     ld.add_action(camera_publisher_node_bottom) #to publish front camera
     ld.add_action(gui_node) #to open gui
     # ld.add_action(master_controller_node) #to select the final output of cmd velocity and set point

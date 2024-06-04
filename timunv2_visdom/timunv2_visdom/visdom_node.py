@@ -1,5 +1,6 @@
 import rclpy
 import cv2
+import math
 import numpy as np
 from cv_bridge import CvBridge
 from rclpy.node import Node
@@ -48,8 +49,8 @@ class Visdom_Node(Node):
             else:
                 if self.opr_mode == 5:
                     height , width, channels = self.frame.shape
-                    g_frane = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
-                    g_lastfrane = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+                    g_frane = cv2.cvtColor(self.frame,cv2.COLOR_BGR2GRAY)
+                    g_lastfrane = cv2.cvtColor(self.last_frame,cv2.COLOR_BGR2GRAY)
 
                     orb = cv2.ORB_create(nfeatures =240000)
                     bf = cv2.BFMatcher_create(cv2.NORM_HAMMING)
@@ -60,7 +61,7 @@ class Visdom_Node(Node):
                     matches = bf.match(des1,des2) 
                     matches = sorted(matches, key= lambda x:x.distance)
 
-                    join_img,x,y =self.draw_matches(g_frane,kp1,g_lastfrane,kp2,matches[:100])
+                    join_img,x,y =self.draw_matches(g_frane, kp1, g_lastfrane, kp2, matches[:100])
 
                     self.x_vo += (math.cos(self.imu_yaw)*x) + (math.sin(self.imu_yaw)*y)
                     self.y_vo += ((math.cos(self.imu_yaw)*y) + (math.sin(self.imu_yaw)*x))*-1
@@ -71,9 +72,10 @@ class Visdom_Node(Node):
                     self.calc_x_vo = round(self.calc_x_vo,2)
                     self.calc_y_vo = round(self.calc_y_vo,2)
 
-                    cv2.putText(self.frame, f'VO_x: {calc_x_vo} m, VO_y: {calc_y_vo} m', (50,50), cv2.FONT_HERSHEY_SIMPLEX ,  
+                    cv2.putText(self.frame, f'VO_x: {self.calc_x_vo} m, VO_y: {self.calc_y_vo} m', (50,50), cv2.FONT_HERSHEY_SIMPLEX ,  
                     1, (255, 0, 0) , 2, cv2.LINE_AA)
                     cv2.imshow("Visdom", self.frame)
+                    cv2.imshow("Visdom", join_img)
                     cv2.waitKey(1)
                     self.visdom.vo_x = self.calc_x_vo
                     self.visdom.vo_y = self.calc_y_vo
@@ -82,7 +84,7 @@ class Visdom_Node(Node):
                 else:
                     self.x_vo = 0
                     self.y_vo = 0
-                    cv2.imshow("standby",self.frame)
+                    cv2.imshow("Visdom",self.frame)
                     cv2.waitKey(1)
         except Exception as e:
             self.get_logger().error(f"Frame is empty: {str(e)}")
@@ -92,7 +94,7 @@ class Visdom_Node(Node):
         A_V = 2*self.visdom.vo_z*math.tan(self.FOVV_RAD)
         return (A_H/w)*x, (A_V/h)*y
 
-    def draw_matches(img1, keypoints1, img2, keypoints2, matches):
+    def draw_matches(self, img1, keypoints1, img2, keypoints2, matches):
         r, c = img1.shape[:2]
         r1, c1 = img2.shape[:2]
 
@@ -151,7 +153,7 @@ class Visdom_Node(Node):
     def joy_cmd_utl_callback(self, msg:JoyUtilities):
         self.opr_mode = msg.opr_mode
     def ping_callback(self, msg):
-        self.visdom.vo_z = msg.ranges_scan
+        self.visdom.vo_z = msg.ranges_scan/1000.0
     def serial_sensor_data_callback(self,msg):
         if self.opr_mode == 5:
             if self.status_visdom == 0:

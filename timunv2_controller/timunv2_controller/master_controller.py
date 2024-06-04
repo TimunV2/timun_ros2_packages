@@ -5,6 +5,7 @@ from rclpy.duration import Duration
 
 #import necessary messages
 from geometry_msgs.msg import Twist
+from sensor_msgs.msg import Joy
 from timunv2_interfaces.msg import JoyUtilities
 from timunv2_interfaces.msg import SetPoint
 from timunv2_interfaces.msg import SensorData
@@ -15,6 +16,7 @@ class MasterController(Node):
         super().__init__("master_controller")
         self.get_logger().info("master_controller node has been started")
         #init subscriber
+        self.joy_sub_ = self.create_subscription(Joy, "/joy", self.joy_callback, 10)
         self.joy_cmd_vel_sub_ = self.create_subscription(Twist, "/joy_cmd_vel", self.joy_cmd_vel_callback, 10)
         self.joy_cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.joy_cmd_utl_callback, 10)
         self.serial_sensor_data_sub_ = self.create_subscription(SensorData, "/serial_sensor_data", self.serial_sensor_data_callback, 10)
@@ -77,6 +79,14 @@ class MasterController(Node):
 
         #operation mode variable
         self.operation_mode_auto = False
+        self.R2_button = 0
+        self.L2_button = 0
+        self.R2_button_old = 0
+        self.L2_button_old = 0
+
+    def joy_callback(self,msg):
+        self.R2_button = msg.buttons[7]
+        self.L2_button = msg.buttons[6]
 
     def joy_cmd_vel_callback(self, msg: Twist):
         self.joy_cmd_vel.linear.x = msg.linear.x
@@ -167,6 +177,13 @@ class MasterController(Node):
             self.yaw_setpoint += self.yaw_drift_scale*self.temp_cmd_vel.angular.z
             self.pitch_setpoint += self.pitch_drift_scale*self.temp_cmd_vel.angular.x
             self.roll_setpoint += self.roll_drift_scale*self.temp_cmd_vel.angular.y
+            if self.R2_button == 1 and self.R2_button_old == 0:
+                self.depth_setpoint += 45
+            if self.L2_button == 1 and self.L2_button_old == 0:
+                self.depth_setpoint -= 45
+            self.R2_button_old = self.R2_button
+            self.L2_button_old = self.L2_button
+            
 
         if self.yaw_setpoint > 180 :
             self.yaw_setpoint -= 360

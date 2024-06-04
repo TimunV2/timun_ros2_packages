@@ -15,14 +15,14 @@ obstacle_avoidance:
 pipeline_navigation:
   pid_parameters:
     iou: 1.1
-    kd_heading: 0.05
+    kd_heading: 0.03
     kd_lateral: 0.01
     kd_range: 0.0
     ki_heading: 0.0
     ki_lateral: 0.0
     ki_range: 0.0
-    kp_heading: 0.0012
-    kp_lateral: 0.01
+    kp_heading: 0.00125
+    kp_lateral: 0.0075
     kp_range: 0.0
     threshold: 1.1
     throtle: 0.3
