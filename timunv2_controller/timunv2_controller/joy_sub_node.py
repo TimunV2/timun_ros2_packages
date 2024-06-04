@@ -40,7 +40,7 @@ class JoySubNode(Node):
         self.movement_mode = 0
         self.operation_mode = 0
         self.data_log = 0
-        self.max_throtle_scale = 0.5
+        self.max_throtle_scale = 0.9
 
         #other variable
         self.sel_button_new = False
@@ -98,6 +98,8 @@ class JoySubNode(Node):
         self.cmd_vel.linear.y = msg.axes[1]
 
         alternate_button = msg.buttons[4]
+        L2_button = msg.buttons[6]
+        R2_button = msg.buttons[7]
 
         if alternate_button == 0:
             self.cmd_vel.linear.z = msg.axes[3]
@@ -109,6 +111,17 @@ class JoySubNode(Node):
             self.cmd_vel.angular.z = 0.0
             self.cmd_vel.angular.x = msg.axes[3]
             self.cmd_vel.angular.y = msg.axes[2]*-1
+        if L2_button == 1:
+            self.cmd_vel.linear.z = 1.0
+            self.cmd_vel.angular.z = 0.0
+            self.cmd_vel.angular.x = 0.0
+            self.cmd_vel.angular.y = 0.0
+        if R2_button == 1:
+            self.cmd_vel.linear.z = -1.0
+            self.cmd_vel.angular.z = 0.0
+            self.cmd_vel.angular.x = 0.0
+            self.cmd_vel.angular.y = 0.0
+
 
         #"arrow up & down"button as lumen intensity
         if( msg.axes[6] > 0 and self.lumen_pwr < 100 ):
@@ -160,7 +173,7 @@ class JoySubNode(Node):
         self.opr_button_new = bool(msg.buttons[2])
         if( self.opr_button_new == True and self.opr_button_old == False):
             self.operation_mode += 1
-            if(self.operation_mode > 4):
+            if(self.operation_mode > 5):
                 self.operation_mode = 0
         self.opr_button_old = self.opr_button_new
 
