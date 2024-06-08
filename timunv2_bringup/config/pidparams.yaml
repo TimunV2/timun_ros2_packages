@@ -15,14 +15,14 @@ obstacle_avoidance:
 pipeline_navigation:
   pid_parameters:
     iou: 1.1
-    kd_heading: 0.03
-    kd_lateral: 0.01
-    kd_range: 0.0
+    kd_heading: 0.00
+    kd_lateral: 0.02
+    kd_range: 0.05
     ki_heading: 0.0
     ki_lateral: 0.0
     ki_range: 0.0
-    kp_heading: 0.00125
-    kp_lateral: 0.0075
+    kp_heading: 0.001
+    kp_lateral: 0.001
     kp_range: 0.0
     threshold: 1.1
     throtle: 0.3
@@ -31,7 +31,7 @@ serial_node:
     kd_depth: 30.0
     kd_pitch: 20.0
     kd_roll: 30.0
-    kd_yaw: 30.0
+    kd_yaw: 75.0
     ki_depth: 0.0
     ki_pitch: 0.0
     ki_roll: 0.0
@@ -39,4 +39,4 @@ serial_node:
     kp_depth: 25.0
     kp_pitch: -25.0
     kp_roll: 12.0
-    kp_yaw: 8.0
+    kp_yaw: 12.0
