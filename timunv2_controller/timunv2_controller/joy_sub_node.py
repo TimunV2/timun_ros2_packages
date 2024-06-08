@@ -40,7 +40,7 @@ class JoySubNode(Node):
         self.movement_mode = 0
         self.operation_mode = 0
         self.data_log = 0
-        self.max_throtle_scale = 0.5
+        self.max_throtle_scale = 1.0
 
         #other variable
         self.sel_button_new = False

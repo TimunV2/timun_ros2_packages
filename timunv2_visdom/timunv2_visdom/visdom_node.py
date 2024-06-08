@@ -16,7 +16,7 @@ class Visdom_Node(Node):
         self.joy_cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.joy_cmd_utl_callback, 10)
         self.serial_sensor_data_sub_ = self.create_subscription(SensorData, "/serial_sensor_data", self.serial_sensor_data_callback, 10)
 
-        self.visdom_pub_ = self.create_publisher(VisdomData,"/vidom_value",10)
+        self.visdom_pub_ = self.create_publisher(VisdomData,"/visdom_value",10)
         self.cv_bridge = CvBridge()
         self.timer_ = self.create_timer(0.03, self.timer_callback)
         self.opr_mode = 1
@@ -62,9 +62,12 @@ class Visdom_Node(Node):
                     matches = sorted(matches, key= lambda x:x.distance)
 
                     join_img,x,y =self.draw_matches(g_frane, kp1, g_lastfrane, kp2, matches[:100])
-
-                    self.x_vo += (math.cos(self.imu_yaw)*x) + (math.sin(self.imu_yaw)*y)
-                    self.y_vo += ((math.cos(self.imu_yaw)*y) + (math.sin(self.imu_yaw)*x))*-1
+                    delta_x = (math.cos(self.imu_yaw) * x) - (math.sin(self.imu_yaw) * y)
+                    delta_y = (math.sin(self.imu_yaw) * x) + (math.cos(self.imu_yaw) * y)
+                    self.x_vo += delta_x
+                    self.y_vo += delta_y
+                    # self.x_vo += (math.cos(self.imu_yaw)*x) + (math.sin(self.imu_yaw)*y)
+                    # self.y_vo += ((math.cos(self.imu_yaw)*y) + (math.sin(self.imu_yaw)*x))*-1
                     self.x_vo = round(self.x_vo,3)
                     self.y_vo = round(self.y_vo,3)
 
@@ -97,18 +100,17 @@ class Visdom_Node(Node):
     def draw_matches(self, img1, keypoints1, img2, keypoints2, matches):
         r, c = img1.shape[:2]
         r1, c1 = img2.shape[:2]
-
         # Create a blank image with the size of the first image + second image
         output_img = np.zeros((max([r, r1]), c+c1, 3), dtype='uint8')
         output_img[:r, :c, :] = np.dstack([img1, img1, img1])
         output_img[:r1, c:c+c1, :] = np.dstack([img2, img2, img2])
-
         # Go over all of the matching points and extract them
         pixel_shifts = []
         points_img1 =[]
         points_img2 =[]
         distances_1=[]
         distances_2=[]
+        offset = 15
         for match in matches:
             img1_idx = match.queryIdx
             img2_idx = match.trainIdx
@@ -119,7 +121,7 @@ class Visdom_Node(Node):
             points_img1.append((x1,y1))
             points_img2.append((x2,y2))
             # print(points_img1)
-            if (x2>x1+15 or x2<x1-15) or (y2>y1+15 or y2<y1-15) or shift[0]==0 or shift[1]==0:
+            if (x2>x1+offset or x2<x1-offset) or (y2>y1+offset or y2<y1-offset) or shift[0]==0 or shift[1]==0:
                 continue
             pixel_shifts.append(shift)
             # Draw circles on the keypoints
@@ -129,9 +131,7 @@ class Visdom_Node(Node):
             # Connect the same keypoints
             cv2.line(output_img, (int(x1),int(y1)), (int(x2)+c,int(y2)), (0, 255, 255), 1)
         pixel_shifts_array = np.array(pixel_shifts)
-
         # print(pixel_shifts_array)
-        
         # mean_x,mean_y = min(pixel_shifts_array[0]),  min(pixel_shifts_array[1])
         if pixel_shifts_array.size>0:
             mean = np.mean(pixel_shifts_array, axis=0)
@@ -140,10 +140,8 @@ class Visdom_Node(Node):
         else:
             mean_x = 0
             mean_y = 0
-        
         return output_img,mean_x,mean_y 
             
-    
     def image_callback(self, msg):
         try:
             self.frame = self.cv_bridge.imgmsg_to_cv2(msg, "bgr8")
@@ -152,8 +150,10 @@ class Visdom_Node(Node):
 
     def joy_cmd_utl_callback(self, msg:JoyUtilities):
         self.opr_mode = msg.opr_mode
+
     def ping_callback(self, msg):
         self.visdom.vo_z = msg.ranges_scan/1000.0
+        
     def serial_sensor_data_callback(self,msg):
         if self.opr_mode == 5:
             if self.status_visdom == 0:
@@ -164,8 +164,6 @@ class Visdom_Node(Node):
                 self.imu_yaw = msg.imu_yaw - self.zero_yaw
         else:
             self.status_visdom = 0
-                
-
 
     def timer_callback(self):
         self.visdom_task()
