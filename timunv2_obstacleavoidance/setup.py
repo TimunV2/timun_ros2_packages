@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            "Obstacle_avoidance_node = timunv2_obstacleavoidance.obstacle_detect:main"
         ],
     },
 )

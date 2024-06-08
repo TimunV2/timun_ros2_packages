@@ -1,2 +1,0 @@
-float32 set_point_yaw
-float32 set_point_depth
