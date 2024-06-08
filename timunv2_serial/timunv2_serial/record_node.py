@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from brping import Ping1D
-from timunv2_interfaces.msg import PingData, SensorData, SetPoint, PipeDetect, JoyUtilities, RecordData
+from timunv2_interfaces.msg import PingData, SensorData, SetPoint, PipeDetect, JoyUtilities, RecordData, VisdomData
 from geometry_msgs.msg import Twist
 
 class Ping_Node(Node):
@@ -15,13 +15,18 @@ class Ping_Node(Node):
         self.pipeline_cmd_vel_sub_ = self.create_subscription(Twist, "/pipeline_cmd_vel", self.pipeline_cmd_vel_callback, 10)
         self.master_set_point_sub_ = self.create_subscription(SetPoint, "/master_set_point", self.master_set_point_callback, 10)
         self.pipeline_sub_ = self.create_subscription(PipeDetect, "pipeline_value", self.pipeline_detect_callback, 10)
-        
+        self.visdom_sub_ = self.create_subscription(VisdomData, "/visdom_value",self.visdom_callback,10)
+
         self.record_pub_ = self.create_publisher(RecordData,"/record_data",10)
         self.record_timer_ = self.create_timer(0.01, self.record_timer)
         self.record = RecordData() 
     
     def record_timer(self):
         self.record_pub_.publish(self.record)
+    def visdom_callback(self,msg):
+        self.record.vo_x = msg.vo_x
+        self.record.vo_y = msg.vo_y
+        self.record.vo_z = msg.vo_z
     def ping_callback(self,msg):
         self.record.ranges_scan = msg.ranges_scan
         self.record.confidence = msg.confidence
