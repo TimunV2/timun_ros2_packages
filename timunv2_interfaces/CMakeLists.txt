@@ -21,6 +21,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/PingData.msg"
   "msg/RecordData.msg"
   "msg/VisdomData.msg"
+  "msg/ObsData.msg"
   DEPENDENCIES geometry_msgs
 )
 

@@ -21,6 +21,8 @@ class MasterController(Node):
         self.joy_cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.joy_cmd_utl_callback, 10)
         self.serial_sensor_data_sub_ = self.create_subscription(SensorData, "/serial_sensor_data", self.serial_sensor_data_callback, 10)
         self.pipeline_cmd_vel_sub_ = self.create_subscription(Twist, "/pipeline_cmd_vel", self.pipeline_cmd_vel_callback, 10)
+        self.obstacle_cmd_vel_sub_ = self.create_subscription(Twist, "/obstacle_cmd_vel", self.obstacle_cmd_vel_callback, 10)
+        self.obstacle_set_point_sub_ = self.create_subscription(SetPoint, "/obstacle_set_point", self.obstacle_set_point_callback, 10)
 
         #init publisher
         self.master_cmd_vel_pub_ = self.create_publisher(Twist, "/master_cmd_vel", 10)
@@ -32,6 +34,8 @@ class MasterController(Node):
         #velocity command variable
         self.joy_cmd_vel = Twist()
         self.pipe_cmd_vel = Twist()
+        self.obstacle_cmd_vel = Twist()
+        self.obstacle_set_point = SetPoint()
         self.master_cmd_vel = Twist()
         self.temp_cmd_vel = Twist()
 
@@ -109,14 +113,22 @@ class MasterController(Node):
         self.imu_pitch = msg.imu_pitch
         self.imu_roll = msg.imu_roll
         self.depth_value = msg.depth
-        self.sonar_ranges = msg.ranges_scan
-        self.sonar_confidence = msg.confidence
 
     def pipeline_cmd_vel_callback(self, msg: Twist):
         self.pipe_cmd_vel.linear.x = msg.linear.x
         self.pipe_cmd_vel.linear.y = msg.linear.y
         self.pipe_cmd_vel.linear.z = msg.linear.z
         self.pipe_cmd_vel.angular.z = msg.angular.z
+    
+    def obstacle_cmd_vel_callback(self, msg: Twist):
+        self.obstacle_cmd_vel.linear.x = msg.linear.x
+        self.obstacle_cmd_vel.linear.y = msg.linear.y
+        self.obstacle_cmd_vel.linear.z = msg.linear.z
+        self.obstacle_cmd_vel.angular.z = msg.angular.z
+    
+    def obstacle_set_point_callback(self, msg: SetPoint):
+        self.obstacle_set_point.set_point_depth = msg.set_point_depth
+        self.obstacle_set_point.set_point_yaw = msg.set_point_yaw
 
     def movement_mode_(self):
         self.stabilize_state_new = self.stabilize
@@ -254,7 +266,7 @@ class MasterController(Node):
         elif self.movement_mode == 3 and self.operation_mode == 4: #auto 4 (Pipefoll 4 Heading >> cv, Lateral >> cv, Throtle >> cv)
             #lateral from cv
             self.master_cmd_vel.linear.x = self.pipe_cmd_vel.linear.x
-            #throtle from joy
+            #throtle from cv
             self.master_cmd_vel.linear.y = self.pipe_cmd_vel.linear.y
 
             # Temp / Master Changes
@@ -262,7 +274,13 @@ class MasterController(Node):
             self.temp_cmd_vel.linear.z = self.joy_cmd_vel.linear.z
             #yaw setpoint drift from joy
             self.temp_cmd_vel.angular.z =self.pipe_cmd_vel.angular.z
-
+        
+        elif self.movement_mode == 3 and self.operation_mode == 6:
+            #lateral from cv
+            self.master_cmd_vel.linear.x = self.pipe_cmd_vel.linear.x
+            #throtle from cv
+            self.master_cmd_vel.linear.y = self.pipe_cmd_vel.linear.y
+            
         if self.arm_software == False :
             self.master_cmd_vel.linear.x = 0.0
             self.master_cmd_vel.linear.y = 0.0
@@ -290,6 +308,9 @@ class MasterController(Node):
         self.master_setpoint.set_point_pitch = self.pitch_setpoint
         self.master_setpoint.set_point_roll = self.roll_setpoint
         self.master_setpoint.set_point_depth = self.depth_setpoint
+        if self.movement_mode == 3 and self.operation_mode == 6:
+            self.master_setpoint.set_point_yaw = self.obstacle_set_point.set_point_yaw
+            self.master_setpoint.set_point_depth = self.obstacle_set_point.set_point_depth
 
         self.master_cmd_vel_pub_.publish(self.master_cmd_vel)
         self.master_setpoint_pub_.publish(self.master_setpoint)
