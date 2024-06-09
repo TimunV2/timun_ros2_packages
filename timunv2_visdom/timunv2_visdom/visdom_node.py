@@ -62,8 +62,23 @@ class Visdom_Node(Node):
                     matches = sorted(matches, key= lambda x:x.distance)
 
                     join_img,x,y =self.draw_matches(g_frane, kp1, g_lastfrane, kp2, matches[:100])
-                    delta_x = (math.cos(self.imu_yaw) * x) - (math.sin(self.imu_yaw) * y)
-                    delta_y = (math.sin(self.imu_yaw) * x) + (math.cos(self.imu_yaw) * y)
+                    r = math.sqrt((x*x)+(y*y))
+                    t = (math.atan2(y,x)*(180/math.pi))-90
+                    if t < 0:
+                        tetha_frame = t + 360
+                    else:
+                        tetha_frame = t
+
+                    vo_tetha = self.imu_yaw - tetha_frame
+                    
+                    delta_x = (math.sin(vo_tetha*math.pi/180) * r)
+                    delta_y = (math.cos(vo_tetha*math.pi/180) * r)*-1
+
+                    # delta_x = (math.cos(self.imu_yaw) * x) + (math.sin(self.imu_yaw) * y)
+                    # delta_y = (math.sin(self.imu_yaw) * x) + (math.cos(self.imu_yaw) * y)
+
+                    # delta_x = (math.cos(self.imu_yaw) * x) - (math.sin(self.imu_yaw) * y)
+                    # delta_y = (math.sin(self.imu_yaw) * x) + (math.cos(self.imu_yaw) * y)
                     self.x_vo += delta_x
                     self.y_vo += delta_y
                     # self.x_vo += (math.cos(self.imu_yaw)*x) + (math.sin(self.imu_yaw)*y)
