@@ -72,7 +72,7 @@ class Visdom_Node(Node):
                     vo_tetha = self.imu_yaw - tetha_frame
                     
                     delta_x = (math.sin(vo_tetha*math.pi/180) * r)
-                    delta_y = (math.cos(vo_tetha*math.pi/180) * r)*-1
+                    delta_y = (math.cos(vo_tetha*math.pi/180) * r)*-1 # *-1 karena mapping +- Y terbalik dari kamera
 
                     # delta_x = (math.cos(self.imu_yaw) * x) + (math.sin(self.imu_yaw) * y)
                     # delta_y = (math.sin(self.imu_yaw) * x) + (math.cos(self.imu_yaw) * y)
@@ -175,9 +175,13 @@ class Visdom_Node(Node):
                 self.zero_yaw = msg.imu_yaw
                 self.imu_yaw = msg.imu_yaw
                 self.status_visdom = 1
+                self.get_logger().info("Getting actual yaw as reference")
+                self.get_logger().info(f"Starting Visual Odometry Prediction")
+                self.get_logger().info(f"Status = {self.status_visdom}")
             else:
                 self.imu_yaw = msg.imu_yaw - self.zero_yaw
         else:
+            self.imu_yaw = msg.imu_yaw
             self.status_visdom = 0
 
     def timer_callback(self):
