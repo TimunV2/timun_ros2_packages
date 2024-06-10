@@ -31,7 +31,7 @@ class Serial_Node(Node):
         self.rov_heartbeat_pub_ = self.create_publisher(HeartBeat, "/rov_heartbeat", 10)
 
         self.timer_ = self.create_timer(0.01, self.timer_callback)
-        self.timer1_ = self.create_timer(0.05, self.timer1_callback) # publish
+        self.timer1_ = self.create_timer(0.01, self.timer1_callback) # publish
         self.timer1_ = self.create_timer(1, self.heartbeat_check) # 1 sec interval
 
         self.yaml_filepath = '/home/tkd/timunv2_ws/src/timunv2_bringup/config/pidparams.yaml'

@@ -89,6 +89,7 @@ class MasterController(Node):
         self.L2_button_old = 0
 
     def joy_callback(self,msg):
+        self.R1_button = msg.buttons[5]
         self.R2_button = msg.buttons[7]
         self.L2_button = msg.buttons[6]
 
@@ -159,6 +160,10 @@ class MasterController(Node):
             self.master_cmd_vel.angular.x = self.joy_cmd_vel.angular.x*self.cmd_angular_scale[0]
             self.master_cmd_vel.angular.y = self.joy_cmd_vel.angular.y*self.cmd_angular_scale[1]
             self.master_cmd_vel.angular.z = self.joy_cmd_vel.angular.z*self.cmd_angular_scale[2]
+            if self.R2_button == 1:
+                self.master_cmd_vel.linear.x = 0.25
+            if self.L2_button == 1:
+                self.master_cmd_vel.linear.x = -0.25
         
         elif self.movement_mode == 1: #stabilize
             #linear velocity direct from joy input
@@ -170,6 +175,11 @@ class MasterController(Node):
             self.yaw_setpoint += self.yaw_drift_scale*self.joy_cmd_vel.angular.z
             self.pitch_setpoint += self.pitch_drift_scale*self.joy_cmd_vel.angular.x
             self.roll_setpoint += self.roll_drift_scale*self.joy_cmd_vel.angular.y
+            if self.R2_button == 1:
+                self.master_cmd_vel.linear.y = 0.25
+            if self.L2_button == 1:
+                self.master_cmd_vel.linear.y = -0.25
+            
 
         elif self.movement_mode == 2: #depthhold
             #linear x,y velocity direct from joy input

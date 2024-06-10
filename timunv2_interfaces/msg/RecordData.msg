@@ -42,5 +42,6 @@ int8 lumen
 int8 mov_mode
 int8 opr_mode
 int8 data_log
+int8 count_vo_record
 
 

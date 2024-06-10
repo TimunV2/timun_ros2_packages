@@ -27,6 +27,7 @@ class Ping_Node(Node):
         self.record.vo_x = msg.vo_x
         self.record.vo_y = msg.vo_y
         self.record.vo_z = msg.vo_z
+        self.record.count_vo_record = msg.count_vo_record
     def ping_callback(self,msg):
         self.record.ranges_scan = msg.ranges_scan
         self.record.confidence = msg.confidence

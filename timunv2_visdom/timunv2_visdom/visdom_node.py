@@ -4,13 +4,14 @@ import math
 import numpy as np
 from cv_bridge import CvBridge
 from rclpy.node import Node
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, Joy
 from timunv2_interfaces.msg import PingData, SensorData, JoyUtilities, VisdomData
 
 class Visdom_Node(Node):
     def __init__(self):
         super().__init__("Visdom_node")
         self.get_logger().info("Visdom_node has been started")
+        self.joy_sub_ = self.create_subscription(Joy, "/joy", self.joy_callback, 10)
         self.camera_sub_ = self.create_subscription(Image, "/camera_bottom", self.image_callback,10)
         self.ping_sensor_sub_ = self.create_subscription(PingData, "/ping_data", self.ping_callback, 10)
         self.joy_cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.joy_cmd_utl_callback, 10)
@@ -41,6 +42,11 @@ class Visdom_Node(Node):
         self.visdom.vo_x = 0.0
         self.visdom.vo_y = 0.0
         self.status_visdom = 0
+        self.R1_button = 0
+        self.R1_button_old = 0
+        self.count_vo_record = 0
+    def joy_callback(self,msg):
+        self.R1_button = msg.buttons[5]
         
     def visdom_task(self):
         try:
@@ -83,14 +89,14 @@ class Visdom_Node(Node):
                     self.y_vo += delta_y
                     # self.x_vo += (math.cos(self.imu_yaw)*x) + (math.sin(self.imu_yaw)*y)
                     # self.y_vo += ((math.cos(self.imu_yaw)*y) + (math.sin(self.imu_yaw)*x))*-1
-                    self.x_vo = round(self.x_vo,3)
-                    self.y_vo = round(self.y_vo,3)
+                    # self.x_vo = round(self.x_vo,3)
+                    # self.y_vo = round(self.y_vo,3)
 
                     self.calc_x_vo, self.calc_y_vo = self.count_VO(self.x_vo,self.y_vo,height,width)
-                    self.calc_x_vo = round(self.calc_x_vo,2)
-                    self.calc_y_vo = round(self.calc_y_vo,2)
+                    # self.calc_x_vo = round(self.calc_x_vo,2)
+                    # self.calc_y_vo = round(self.calc_y_vo,2)
 
-                    cv2.putText(self.frame, f'VO_x: {self.calc_x_vo} m, VO_y: {self.calc_y_vo} m', (50,50), cv2.FONT_HERSHEY_SIMPLEX ,  
+                    cv2.putText(self.frame, f'VO_x: {round(self.calc_x_vo,2)} m, VO_y: {round(self.calc_y_vo,2)} m', (50,50), cv2.FONT_HERSHEY_SIMPLEX ,  
                     1, (255, 0, 0) , 2, cv2.LINE_AA)
                     cv2.imshow("Visdom", self.frame)
                     cv2.imshow("Visdom", join_img)
@@ -180,9 +186,16 @@ class Visdom_Node(Node):
                 self.get_logger().info(f"Status = {self.status_visdom}")
             else:
                 self.imu_yaw = msg.imu_yaw - self.zero_yaw
+                if self.R1_button == 1 and self.R1_button_old == 0:
+                    self.count_vo_record += 1
+                self.R1_button_old = self.R1_button
+                self.visdom.count_vo_record = self.count_vo_record
+
         else:
             self.imu_yaw = msg.imu_yaw
             self.status_visdom = 0
+            self.count_vo_record = 0
+            self.visdom.count_vo_record = self.count_vo_record
 
     def timer_callback(self):
         self.visdom_task()
