@@ -17,7 +17,7 @@ def generate_launch_description():
         package="timunv2_camera",
         executable="camera_publisher_node",
         name="camera_publisher_node_bottom",
-        arguments=["/dev/video1","/camera_bottom"]
+        arguments=["/dev/video0","/camera_bottom"]
     )
 
     master_controller_node = Node(
@@ -38,7 +38,7 @@ def generate_launch_description():
         executable="ping_node"
     )
 
-    # ld.add_action(camera_publisher_node_front) #to publish front camera
+    ld.add_action(camera_publisher_node_front) #to publish front camera
     ld.add_action(camera_publisher_node_bottom) #to publish front camera
     ld.add_action(master_controller_node) #to select the final output of cmd velocity and set point
     ld.add_action(serial_node) #to convert and send the data to stm, and to read sensor data

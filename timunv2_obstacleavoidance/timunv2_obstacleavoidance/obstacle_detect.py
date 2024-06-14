@@ -17,14 +17,14 @@ class ObstacleAvoidance(Node):
     def __init__(self):
         super().__init__("Obstacle_Avoidance_node")
         self.get_logger().info("Obstacle_Avoidance_node has been started")
-        self.camera_sub_ = self.create_subscription(Image, "camera_bottom", self.image_callback,10)
+        self.camera_sub_ = self.create_subscription(Image, "/camera_bottom", self.image_callback,10)
         self.ping_sensor_sub_ = self.create_subscription(PingData, "/ping_data", self.ping_callback, 10)
         self.joy_cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.joy_cmd_utl_callback, 10)
         self.serial_sensor_data_sub_ = self.create_subscription(SensorData, "/serial_sensor_data", self.serial_sensor_data_callback, 10)
 
         self.obs_cmd_vel_pub_ = self.create_publisher(Twist,"/obstacle_cmd_vel",10)
         self.obs_set_point_pub_ = self.create_publisher(SetPoint,"/obstacle_set_point",10)
-        self.model = YOLO('/home/ardiar/ws/timunv2_ws/src/timun_ros2_packages/timunv2_obstacleavoidance/timunv2_obstacleavoidance/SelangYOLOV8n.pt')
+        self.model = YOLO('/home/tkd/timunv2_ws/src/timunv2_obstacleavoidance/timunv2_obstacleavoidance/SelangYOLOV8n.pt')
         self.cv_bridge = CvBridge()
         self.frame = None
         self.frame_area = 0
@@ -32,6 +32,8 @@ class ObstacleAvoidance(Node):
 
         self.timer_ = self.create_timer(0.01, self.timer_callback)
         
+        self.frame_count = 0
+        self.fps = 0
         self.pipe_error = 0
         self.pipe_set_point = 0
         self.heading_output = 0
@@ -48,6 +50,7 @@ class ObstacleAvoidance(Node):
         self.pipe_center_y = 0
         self.last_depth = 0
         self.ranges_scan_last = 0
+        self.opr_mode = 0
 
         self.fps_start_time = time.time()
         self.start_time_move = time.time()
@@ -71,6 +74,8 @@ class ObstacleAvoidance(Node):
         self.depth = msg.depth
     
     def publish_messages(self):
+        self.obs_set_point_pub_.publish(self.obs_set_point)
+        self.obs_cmd_vel_pub_.publish(self.obs_vel)
         self.obs_set_point_pub_.publish(self.obs_set_point)
         self.obs_cmd_vel_pub_.publish(self.obs_vel)
 
@@ -114,95 +119,105 @@ class ObstacleAvoidance(Node):
                             self.pipe_center_x = i[2]
                         elif i[0] == 2: #ROCK
                             self.rock_area = i[1]
-                    if 'coral' not in objects:
+                    if 'selang' not in objects:
                         self.coral_area = 0
+                    # if 'coral' not in objects:
+                    #     self.coral_area = 0
                     if 'rock' not in objects:
                         self.rock_area = 0
                     if 'pipe' not in objects:
                         self.pipe_area = 0
                     #============================================== COMMAND STATUS
-                    if self.rock_area > 0 or self.coral_area > 0 :
-                        if self.rock_area > self.frame_area/16 or self.coral_area > self.frame_area/16:
-                            if self.status_avoid != 1: # detect pertama kali
-                                self.status_avoid = 1
-                                self.obs_vel.linear.x = 0.0
-                                self.obs_vel.linear.z = 0.5
-                                self.last_depth = self.depth
-                                self.get_logger().info('Rock/Coral is Close')
-                                self.ranges_scan_last = self.ranges_scan
-                                self.get_logger().info('Start Rock/Coral Avoidance Movement...')
-                        self.set_point_depth = self.depth - 30 # 30cm offset
-
-                    if self.pipe_area > 0:
-                        if self.pipe_area > self.frame_area/16:
-                            if self.status_avoid != 3:
-                                self.get_logger().info('Pipe is Close')
-                                self.get_logger().info('Start Pipe Avoidance Movement...')
-                                self.status_avoid = 3
-                                self.target_yaw = self.imu_yaw + 180
-                                self.obs_vel.linear.x = 0.0
-                                self.obs_vel.linear.y = 0.25
-                                #======================================= PID PANNING + BRAKING
-                                # self.obs_vel.angular.z = 0.25
-                                if self.target_yaw > 180 :
-                                    self.target_yaw -= 360
-                                elif self.target_yaw < -180 :
-                                    self.target_yaw += 360
-                        if self.status_avoid == 3:
-                            self.pipe_offset =  self.pipe_center_x - center_frame_x
-                    #============================================== COMMAND GERAKAN
-                    if self.status_avoid == 1 : #gerakan menghindar
-                        if self.depth >= self.set_point_depth + 10:
-                            self.obs_set_point.set_point_depth = self.set_point_depth
-                            self.start_time_move = time.time()
-                            self.get_logger().info('Goin Up')
-                        else:
-                            self.obs_set_point.set_point_depth = self.set_point_depth
-                            self.obs_vel.linear.x = self.throtle
-                            self.obs_vel.linear.z = 0.0
-                            if self.ranges_scan < self.ranges_scan_last - 200:
-                                self.elapsed_time_move = time.time() - self.start_time_move
-                            elif self.ranges_scan > self.ranges_scan_last + 200:
-                                self.status_avoid = 2
-                        self.ranges_scan_last = self.ranges_scan
-                    if self.status_avoid == 2:#gerakan setelah melewati batu
-                        self.obs_set_point.set_point_depth = self.depth
-                        end_time_move = time.time()
-                        self.obs_vel.linear.x = 0.5 
-                        if self.elapsed_time_move <= end_time_move - self.start_time_move:
-                            self.obs_set_point.set_point_depth = self.last_depth
+                self.get_logger().info(f'area selang{self.coral_area}')
+                if self.rock_area > 0 or self.coral_area > 0 :
+                    if self.rock_area > self.frame_area/16 or self.coral_area > self.frame_area/16:
+                        if self.status_avoid != 1: # detect pertama kali
+                            self.status_avoid = 1
                             self.obs_vel.linear.x = 0.0
-                            self.get_logger().info('Success Avoiding Rock/Coral')
-                            self.status_avoid = 0
+                            self.obs_vel.linear.z = 0.5
+                            self.last_depth = self.depth
+                            self.get_logger().info('Rock/Coral is Close')
+                            self.ranges_scan_last = self.ranges_scan
+                            self.get_logger().info('Start Rock/Coral Avoidance Movement...')
+                    self.set_point_depth = self.depth - 30 # 30cm offset
 
-                    if self.status_avoid == 3:#gerakan menghindar pipa
-                        if self.imu_yaw <= self.target_yaw + 5 and self.imu_yaw >= self.target_yaw - 5:
+                if self.pipe_area > 0:
+                    if self.pipe_area > self.frame_area/16:
+                        if self.status_avoid != 3:
+                            self.get_logger().info('Pipe is Close')
+                            self.get_logger().info('Start Pipe Avoidance Movement...')
+                            self.status_avoid = 3
+                            self.target_yaw = self.imu_yaw + 180
                             self.obs_vel.linear.x = 0.0
-                            self.obs_vel.linear.y = 0.0
-                            self.obs_vel.angular.z = 0.0
-                            self.status_avoid = 4
-                    if self.status_avoid == 4: #gerakan memutar kembali ke yaw awal
-                        self.obs_set_point.set_point_yaw = self.imu_yaw + 180
-                        if self.obs_set_point.set_point_yaw > 180 :
-                            self.obs_set_point.set_point_yaw -= 360
-                        elif self.obs_set_point.set_point_yaw < -180 :
-                            self.obs_set_point.set_point_yaw += 360
-                        self.get_logger().info('Success Avoiding Pipe')
+                            self.obs_vel.linear.y = 0.25
+                            #======================================= PID PANNING + BRAKING
+                            # self.obs_vel.angular.z = 0.25
+                            if self.target_yaw > 180 :
+                                self.target_yaw -= 360
+                            elif self.target_yaw < -180 :
+                                self.target_yaw += 360
+                    if self.status_avoid == 3:
+                        self.pipe_offset =  self.pipe_center_x - center_frame_x
+                #============================================== COMMAND GERAKAN
+                if self.status_avoid == 1 : #gerakan menghindar
+                    if self.depth >= self.set_point_depth + 50:
+                        self.obs_set_point.set_point_depth = self.set_point_depth
+                        self.start_time_move = time.time()
+                        self.get_logger().info(f'set_point_depth {self.set_point_depth}')
+                        self.get_logger().info('Goin Up')
+                    else:
+                        self.get_logger().info('Start Moving Forward')
+                        self.obs_set_point.set_point_depth = self.set_point_depth
+                        self.obs_vel.linear.x = self.throtle
+                        self.obs_vel.linear.z = 0.0
+                        if self.ranges_scan < self.ranges_scan_last - 200:
+                            self.elapsed_time_move = time.time() - self.start_time_move
+                        elif self.ranges_scan > self.ranges_scan_last + 200:
+                            self.status_avoid = 2
+                            self.get_logger().info('getting elapsed time')
+                    self.ranges_scan_last = self.ranges_scan
+                if self.status_avoid == 2:#gerakan setelah melewati batu
+                    self.obs_set_point.set_point_depth = self.depth
+                    end_time_move = time.time()
+                    self.obs_vel.linear.x = 0.5 
+                    if self.elapsed_time_move <= end_time_move - self.start_time_move:
+                        self.obs_set_point.set_point_depth = self.last_depth
+                        self.obs_vel.linear.x = 0.0
+                        self.get_logger().info('Success Avoiding Rock/Coral')
                         self.status_avoid = 0
+
+                if self.status_avoid == 3:#gerakan menghindar pipa
+                    if self.imu_yaw <= self.target_yaw + 5 and self.imu_yaw >= self.target_yaw - 5:
+                        self.obs_vel.linear.x = 0.0
+                        self.obs_vel.linear.y = 0.0
+                        self.obs_vel.angular.z = 0.0
+                        self.status_avoid = 4
+                if self.status_avoid == 4: #gerakan memutar kembali ke yaw awal
+                    self.obs_set_point.set_point_yaw = self.imu_yaw + 180
+                    if self.obs_set_point.set_point_yaw > 180 :
+                        self.obs_set_point.set_point_yaw -= 360
+                    elif self.obs_set_point.set_point_yaw < -180 :
+                        self.obs_set_point.set_point_yaw += 360
+                    self.get_logger().info('Success Avoiding Pipe')
+                    self.status_avoid = 0
 
                 img = annotator.result()
                 elapsed_time = time.time() - self.fps_start_time
                 self.frame_count += 1 
                 if elapsed_time > 1:  # Update FPS every second
-                    fps = self.frame_count / elapsed_time
+                    self.fps = self.frame_count / elapsed_time
                     self.fps_start_time = time.time()
                     self.frame_count = 0  # Reset frame counter for next second
 
                 # Display FPS on frame
-                fps_text = f"FPS: {fps:.1f}"
+                fps_text = f"FPS: {self.fps:.1f}"
                 cv2.putText(img, fps_text, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
                 cv2.imshow("YOLOv8 Tracking", annotated_frame)
-
+                cv2.waitKey(1)
+            else:
+                cv2.imshow("camera", self.frame)
+                cv2.waitKey(1)
+            self.get_logger().info(f'Status_Avoid {self.status_avoid}')
         except Exception as e:
             self.get_logger().error(f"Frame is empty: {str(e)}")
 
