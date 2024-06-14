@@ -23,12 +23,12 @@ class ObstacleAvoidance(Node):
         self.serial_sensor_data_sub_ = self.create_subscription(SensorData, "/serial_sensor_data", self.serial_sensor_data_callback, 10)
 
         self.obs_cmd_vel_pub_ = self.create_publisher(Twist,"/obstacle_cmd_vel",10)
-        self.obs_set_point_pub_ = self.create_publisher(Twist,"/obstacle_set_point",10)
-        self.model = YOLO('/home/tkd/timunv2_ws/src/timunv2_obstacleavoidance/timunv2_obstacleavoidance/SelangYOLOV8n.pt')
+        self.obs_set_point_pub_ = self.create_publisher(SetPoint,"/obstacle_set_point",10)
+        self.model = YOLO('/home/ardiar/ws/timunv2_ws/src/timun_ros2_packages/timunv2_obstacleavoidance/timunv2_obstacleavoidance/SelangYOLOV8n.pt')
         self.cv_bridge = CvBridge()
         self.frame = None
         self.frame_area = 0
-        self.yaml_filepath = '/home/tkd/timunv2_ws/src/timunv2_bringup/config/pidparams.yaml'
+        self.yaml_filepath = '/home/ardiar/ws/timunv2_ws/src/timun_ros2_packages/timunv2_bringup/config/pidparams.yaml'
 
         self.timer_ = self.create_timer(0.01, self.timer_callback)
         
@@ -71,8 +71,8 @@ class ObstacleAvoidance(Node):
         self.depth = msg.depth
     
     def publish_messages(self):
-        self.obs_set_point_pub_.publish(self.obs_vel)
-        self.obs_cmd_vel_pub_.publish(self.obs_set_point)
+        self.obs_set_point_pub_.publish(self.obs_set_point)
+        self.obs_cmd_vel_pub_.publish(self.obs_vel)
 
     def objectDetect(self):
         try:
@@ -155,6 +155,7 @@ class ObstacleAvoidance(Node):
                         if self.depth >= self.set_point_depth + 10:
                             self.obs_set_point.set_point_depth = self.set_point_depth
                             self.start_time_move = time.time()
+                            self.get_logger().info('Goin Up')
                         else:
                             self.obs_set_point.set_point_depth = self.set_point_depth
                             self.obs_vel.linear.x = self.throtle
