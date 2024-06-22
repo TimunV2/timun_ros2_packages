@@ -28,7 +28,7 @@ class ObstacleAvoidance(Node):
         self.cv_bridge = CvBridge()
         self.frame = None
         self.frame_area = 0
-        self.yaml_filepath = '/home/ardiar/ws/timunv2_ws/src/timun_ros2_packages/timunv2_bringup/config/pidparams.yaml'
+        self.yaml_filepath = '/home/tkd/timunv2_ws/src/timunv2_bringup/config/pidparams.yaml'
 
         self.timer_ = self.create_timer(0.01, self.timer_callback)
         
