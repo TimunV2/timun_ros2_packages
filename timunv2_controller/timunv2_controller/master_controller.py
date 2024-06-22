@@ -21,7 +21,7 @@ class MasterController(Node):
         self.joy_cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.joy_cmd_utl_callback, 10)
         self.serial_sensor_data_sub_ = self.create_subscription(SensorData, "/serial_sensor_data", self.serial_sensor_data_callback, 10)
         self.pipeline_cmd_vel_sub_ = self.create_subscription(Twist, "/pipeline_cmd_vel", self.pipeline_cmd_vel_callback, 10)
-        self.obstacle_cmd_vel_sub_ = self.create_subscription(Twist, "/obstacle_cmd_vel", self.obstacle_cmd_vel_callback, 10)
+        self.obstaclarease_cmd_vel_sub_ = self.create_subscription(Twist, "/obstacle_cmd_vel", self.obstacle_cmd_vel_callback, 10)
         self.obstacle_set_point_sub_ = self.create_subscription(SetPoint, "/obstacle_set_point", self.obstacle_set_point_callback, 10)
 
         #init publisher
@@ -199,6 +199,7 @@ class MasterController(Node):
             self.yaw_setpoint += self.yaw_drift_scale*self.temp_cmd_vel.angular.z
             self.pitch_setpoint += self.pitch_drift_scale*self.temp_cmd_vel.angular.x
             self.roll_setpoint += self.roll_drift_scale*self.temp_cmd_vel.angular.y
+            #for depth variation
             if self.R2_button == 1 and self.R2_button_old == 0:
                 self.depth_setpoint += 45
             if self.L2_button == 1 and self.L2_button_old == 0:
@@ -287,9 +288,9 @@ class MasterController(Node):
         
         elif self.movement_mode == 3 and self.operation_mode == 6:
             #lateral from cv
-            self.master_cmd_vel.linear.x = self.pipe_cmd_vel.linear.x
+            self.master_cmd_vel.linear.x = self.obstacle_cmd_vel.linear.x
             #throtle from cv
-            self.master_cmd_vel.linear.y = self.pipe_cmd_vel.linear.y
+            self.master_cmd_vel.linear.y = self.obstacle_cmd_vel.linear.y
             
         if self.arm_software == False :
             self.master_cmd_vel.linear.x = 0.0
@@ -318,8 +319,10 @@ class MasterController(Node):
         self.master_setpoint.set_point_pitch = self.pitch_setpoint
         self.master_setpoint.set_point_roll = self.roll_setpoint
         self.master_setpoint.set_point_depth = self.depth_setpoint
+
+        # when obstacle avoidance
         if self.movement_mode == 3 and self.operation_mode == 6:
-            self.master_setpoint.set_point_yaw = self.obstacle_set_point.set_point_yaw
+            # self.master_setpoint.set_point_yaw = self.obstacle_set_point.set_point_yaw
             self.master_setpoint.set_point_depth = self.obstacle_set_point.set_point_depth
 
         self.master_cmd_vel_pub_.publish(self.master_cmd_vel)

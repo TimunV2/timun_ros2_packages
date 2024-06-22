@@ -11,11 +11,11 @@ class Visdom_Node(Node):
     def __init__(self):
         super().__init__("Visdom_node")
         self.get_logger().info("Visdom_node has been started")
-        # self.joy_sub_ = self.create_subscription(Joy, "/joy", self.joy_callback, 10)
+        self.joy_sub_ = self.create_subscription(Joy, "/joy", self.joy_callback, 10)
         self.camera_sub_ = self.create_subscription(Image, "/camera_bottom", self.image_callback,10)
-        # self.ping_sensor_sub_ = self.create_subscription(PingData, "/ping_data", self.ping_callback, 10)
-        # self.joy_cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.joy_cmd_utl_callback, 10)
-        # self.serial_sensor_data_sub_ = self.create_subscription(SensorData, "/serial_sensor_data", self.serial_sensor_data_callback, 10)
+        self.ping_sensor_sub_ = self.create_subscription(PingData, "/ping_data", self.ping_callback, 10)
+        self.joy_cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.joy_cmd_utl_callback, 10)
+        self.serial_sensor_data_sub_ = self.create_subscription(SensorData, "/serial_sensor_data", self.serial_sensor_data_callback, 10)
         self.record_sub_ = self.create_subscription(RecordData,"/record_data",self.record_callback,10)
 
         self.visdom_pub_ = self.create_publisher(VisdomData,"/visdom_value",10)
@@ -99,10 +99,10 @@ class Visdom_Node(Node):
                     self.get_logger().info(f"x: {x}, y:{y}")
                     self.get_logger().info(f"scale x: {sx}, y:{sy}")
                     self.get_logger().info(f"rotation: {theta}")
+                    r = math.sqrt((x*x)+(y*y))
+                    t = (math.atan2(y,x)*(180/math.pi))-90
                     # r = math.sqrt((x*x)+(y*y))
                     # t = (math.atan2(y,x)*(180/math.pi))-90
-                    r = math.sqrt((tx*tx)+(ty*ty))
-                    t = (math.atan2(ty,tx)*(180/math.pi))-90
                     # t = rotation_angles
                     if t < 0:
                         tetha_frame = t + 360
@@ -112,7 +112,7 @@ class Visdom_Node(Node):
                     vo_tetha = 0 - tetha_frame
                     
                     delta_x = (math.sin(vo_tetha*math.pi/180) * r)
-                    delta_y = (math.cos(vo_tetha*math.pi/180) * r)*-1 # *-1 karena mapping +- Y terbalik dari kamera
+                    delta_y = (math.cos(vo_tetha*math.pi/180) * r) # *-1 karena mapping +- Y terbalik dari kamera
                     # self.get_logger().info(f"translation_x: {delta_x}")
                     # self.get_logger().info(f"translation_y: {delta_y}")
 
@@ -200,7 +200,7 @@ class Visdom_Node(Node):
         pixel_shifts = []
         points_img1 =[]
         points_img2 =[]
-        offset = 40
+        offset = 15
         for match in matches:
             img1_idx = match.queryIdx
             img2_idx = match.trainIdx
@@ -233,9 +233,9 @@ class Visdom_Node(Node):
         return output_img,mean_x,mean_y,points_img1,points_img2
     
     def record_callback(self,msg:RecordData):
-        self.visdom.vo_z = msg.ranges_scan/1000.0
+        self.visdom.vo_z = 1.8
         self.opr_mode = msg.opr_mode
-        self.count_vo_record = msg.count_vo_record
+        # self.count_vo_record = msg.count_vo_record
         if self.opr_mode == 5:
             if self.status_visdom == 0:
                 self.zero_yaw = msg.imu_yaw
@@ -264,7 +264,7 @@ class Visdom_Node(Node):
         self.opr_mode = msg.opr_mode
 
     def ping_callback(self, msg):
-        self.visdom.vo_z = msg.ranges_scan/1000.0
+        self.visdom.vo_z = 1.1
         
     def serial_sensor_data_callback(self,msg):
         if self.opr_mode == 5:

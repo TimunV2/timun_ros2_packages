@@ -11,13 +11,13 @@ def generate_launch_description():
         package="timunv2_camera",
         executable="camera_publisher_node",
         name="camera_publisher_node_front",
-        arguments=["/dev/video4","/camera_front"]
+        arguments=["/dev/video0","/camera_front"]
     )
     camera_publisher_node_bottom = Node(
         package="timunv2_camera",
         executable="camera_publisher_node",
         name="camera_publisher_node_bottom",
-        arguments=["/dev/video0","/camera_bottom"]
+        arguments=["/dev/video4","/camera_bottom"]
     )
 
     master_controller_node = Node(
