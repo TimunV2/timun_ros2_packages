@@ -48,17 +48,6 @@ class Serial_Node(Node):
         self.read_status_now = False
         self.read_status_last = True
 
-        #BrPing
-        # self.ping_port = "/dev/ttyBRPING"
-        # self.myPing = Ping1D()
-        # self.myPing.connect_serial(self.ping_port,115200)
-        # self.ping_status_now = False
-        # self.ping_status_last = True
-        # self.ping_attach = True
-        # if self.myPing.initialize() is False:
-        #     self.get_logger().error(f"Failed to connect Echo Sounder")
-        #     self.ping_attach = False
-
         #velocity converted          x, y, z
         self.vel_linear_converted = [0, 0, 0]
         self.vel_angular_converted = [0, 0, 0]
@@ -311,12 +300,10 @@ class Serial_Node(Node):
         self.serial_sensor_pub_.publish(self.sensor)
 
     def timer_callback(self):
-        # self.get_logger().info("enter timer callback")
         if self.heartbeat_status == True :
             self.pid_const_yaml()
             self.serial_write()
             self.serial_read()    
-            # self.serial_sensor_pub_.publish(self.sensor)
         else :
             pass
 

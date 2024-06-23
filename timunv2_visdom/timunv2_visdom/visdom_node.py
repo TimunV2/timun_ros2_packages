@@ -95,15 +95,8 @@ class Visdom_Node(Node):
                         sx = 0
                         sy = 0
                         theta = 0.0
-                    self.get_logger().info(f"translation x: {tx}, y:{ty}")
-                    self.get_logger().info(f"x: {x}, y:{y}")
-                    self.get_logger().info(f"scale x: {sx}, y:{sy}")
-                    self.get_logger().info(f"rotation: {theta}")
-                    r = math.sqrt((x*x)+(y*y))
-                    t = (math.atan2(y,x)*(180/math.pi))-90
-                    # r = math.sqrt((x*x)+(y*y))
-                    # t = (math.atan2(y,x)*(180/math.pi))-90
-                    # t = rotation_angles
+                    r = math.sqrt((tx*tx)+(ty*ty))
+                    t = (math.atan2(ty,tx)*(180/math.pi))-90
                     if t < 0:
                         tetha_frame = t + 360
                     else:
@@ -113,29 +106,13 @@ class Visdom_Node(Node):
                     
                     delta_x = (math.sin(vo_tetha*math.pi/180) * r)
                     delta_y = (math.cos(vo_tetha*math.pi/180) * r) # *-1 karena mapping +- Y terbalik dari kamera
-                    # self.get_logger().info(f"translation_x: {delta_x}")
-                    # self.get_logger().info(f"translation_y: {delta_y}")
-
-                    # delta_x = (math.cos(self.imu_yaw) * x) + (math.sin(self.imu_yaw) * y)
-                    # delta_y = (math.sin(self.imu_yaw) * x) + (math.cos(self.imu_yaw) * y)
-
-                    # delta_x = (math.cos(self.imu_yaw) * x) - (math.sin(self.imu_yaw) * y)
-                    # delta_y = (math.sin(self.imu_yaw) * x) + (math.cos(self.imu_yaw) * y)
                     self.x_vo += delta_x
                     self.y_vo += delta_y
-                    # self.x_vo += translation[0]
-                    # self.y_vo += translation[1]
-                    # self.x_vo += (math.cos(self.imu_yaw)*x) + (math.sin(self.imu_yaw)*y)
-                    # self.y_vo += ((math.cos(self.imu_yaw)*y) + (math.sin(self.imu_yaw)*x))*-1
-                    # self.x_vo = round(self.x_vo,3)
-                    # self.y_vo = round(self.y_vo,3)
 
                     self.calc_x_vo, self.calc_y_vo = self.count_VO(self.x_vo,self.y_vo,height,width)
                     self.get_logger().info(f"real: {self.count_vo_record}")
                     self.get_logger().info(f"xVO: {self.calc_x_vo}")
                     self.get_logger().info(f"yVO: {self.calc_y_vo}")
-                    # self.calc_x_vo = round(self.calc_x_vo,2)
-                    # self.calc_y_vo = round(self.calc_y_vo,2)
 
                     cv2.putText(self.frame, f'VO_x: {round(self.calc_x_vo,2)} m, VO_y: {round(self.calc_y_vo,2)} m', (50,50), cv2.FONT_HERSHEY_SIMPLEX ,  
                     1, (255, 0, 0) , 2, cv2.LINE_AA)
@@ -158,6 +135,7 @@ class Visdom_Node(Node):
         A_H = 2*self.visdom.vo_z*math.tan(self.FOVH_RAD)
         A_V = 2*self.visdom.vo_z*math.tan(self.FOVV_RAD)
         return (A_H/w)*x, (A_V/h)*y
+    
     def decompose_homography(self,H):
         # Normalize the homography matrix so that H[2, 2] is 1
         H = H / H[2, 2]
