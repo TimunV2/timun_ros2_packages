@@ -55,7 +55,7 @@ class Visdom_Node(Node):
             if np.all(self.last_frame == None):
                 self.last_frame = self.frame
             else:
-                if self.opr_mode == 5:
+                if self.opr_mode == 6:
                     height , width, channels = self.frame.shape
                     g_frane = cv2.cvtColor(self.frame,cv2.COLOR_BGR2GRAY)
                     g_lastfrane = cv2.cvtColor(self.last_frame,cv2.COLOR_BGR2GRAY)
@@ -211,7 +211,7 @@ class Visdom_Node(Node):
         return output_img,mean_x,mean_y,points_img1,points_img2
     
     def record_callback(self,msg:RecordData):
-        self.visdom.vo_z = 1.8
+        # self.visdom.vo_z = 1.8
         self.opr_mode = msg.opr_mode
         # self.count_vo_record = msg.count_vo_record
         if self.opr_mode == 5:
@@ -242,7 +242,7 @@ class Visdom_Node(Node):
         self.opr_mode = msg.opr_mode
 
     def ping_callback(self, msg):
-        self.visdom.vo_z = 1.1
+        self.visdom.vo_z = msg.ranges_scan /1000.0
         
     def serial_sensor_data_callback(self,msg):
         if self.opr_mode == 5:

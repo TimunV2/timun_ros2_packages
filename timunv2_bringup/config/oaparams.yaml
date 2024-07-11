@@ -1,0 +1,9 @@
+obstacle_avoidance:
+  mode: 1
+  throtle0: 0.3
+  throtle1: 0.7 
+  timer0: 5
+  throtle2: 0.7 
+  timer1: 5
+  throtle3: -0.7 
+  timer2: 5

@@ -70,6 +70,7 @@ class Serial_Node(Node):
         self.movement_mode = 0
         self.operation_mode = 0
         self.imu_reset = False
+        self.imu_select = 0
 
         #sensor data variable
         self.sensor = SensorData()
@@ -167,6 +168,7 @@ class Serial_Node(Node):
                 self.k_depth[0] = serial_node_pid_parameters.get('kp_depth', 0)
                 self.k_depth[1] = serial_node_pid_parameters.get('ki_depth', 0)
                 self.k_depth[2] = serial_node_pid_parameters.get('kd_depth', 0)
+                self.imu_select = serial_node_pid_parameters.get('imu_select', 0)
             else:
                 print("No PID parameters found for serial_node in the YAML file.")
         
@@ -221,6 +223,7 @@ class Serial_Node(Node):
         message_arm_hardware = self.arm_hardware.to_bytes(1, byteorder='big', signed=True)
         message_arm_software = self.arm_software.to_bytes(1, byteorder='big', signed=True)
         message_imu_reset = self.imu_reset.to_bytes(1, byteorder='big', signed=True)
+        message_imu_select = self.imu_select.to_bytes(1, byteorder='big', signed=True)
         
         try:
             self.ser = serial.Serial(self.port, self.baudrate)
@@ -247,7 +250,7 @@ class Serial_Node(Node):
                                 + message_lumen_pwr
                                 + message_movement_mode + message_operation_mode
                                 + message_arm_hardware + message_arm_software
-                                + message_imu_reset
+                                + message_imu_reset + message_imu_select
                                 )
             self.write_status_now = True
 

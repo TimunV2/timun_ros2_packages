@@ -291,6 +291,10 @@ class MasterController(Node):
             self.master_cmd_vel.linear.x = self.obstacle_cmd_vel.linear.x
             #throtle from cv
             self.master_cmd_vel.linear.y = self.obstacle_cmd_vel.linear.y
+
+            # Temp / Master Changes
+            #yaw setpoint drift from joy
+            self.temp_cmd_vel.angular.z =self.obstacle_cmd_vel.angular.z
             
         if self.arm_software == False :
             self.master_cmd_vel.linear.x = 0.0
@@ -322,7 +326,7 @@ class MasterController(Node):
 
         # when obstacle avoidance
         if self.movement_mode == 3 and self.operation_mode == 6:
-            # self.master_setpoint.set_point_yaw = self.obstacle_set_point.set_point_yaw
+        #     # self.master_setpoint.set_point_yaw = self.obstacle_set_point.set_point_yaw
             self.master_setpoint.set_point_depth = self.obstacle_set_point.set_point_depth
 
         self.master_cmd_vel_pub_.publish(self.master_cmd_vel)

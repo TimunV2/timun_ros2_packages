@@ -29,19 +29,19 @@ class ObstacleAvoidance(Node):
         self.cv_bridge = CvBridge()
         self.frame = None
         self.frame_area = 0
-        self.yaml_filepath = '/home/tkd/timunv2_ws/src/timunv2_bringup/config/pidparams.yaml'
+        # self.yaml_filepath = '/home/tkd/timunv2_ws/src/timunv2_bringup/config/pidparams.yaml'
+        self.yaml_filepath = '/home/tkd/timunv2_ws/src/timunv2_bringup/config/oaparams.yaml'
+
+        self.throtle = [0.0, 0.0, 0.0, 0.0]
+        self.duration = [0, 0, 0]
 
         self.timer_ = self.create_timer(0.01, self.timer_callback)
         
         self.frame_count = 0
         self.fps = 0
-        self.pipe_error = 0
-        self.pipe_set_point = 0
-        self.heading_output = 0
-        self.pipe_heading_pid = PID(KP=0.0, KI=0.0, KD=0.0, target=0)
-        self.pipe_heading_pid.setLims(min=-1.0, max=1.0)
-        self.k_heading = [0, 0, 0]
+        
 
+        self.avoid_mode = 0 # 0 for vertical mode, 1 for horizontal mode
         self.obs_set_point = SetPoint()
         self.obs_vel = Twist()
         self.status_avoid = 0
@@ -58,11 +58,13 @@ class ObstacleAvoidance(Node):
         self.start_time_move = time.time()
         self.elapsed_time_move = 0
 
-        self.throtle = 0.0
+        self.avoid_step = 0
+        self.target_move_time = 0
     
     def timer_callback(self):
         self.objectDetect()
         self.publish_messages()
+        self.param_yaml()
 
     def joy_cmd_utl_callback(self, msg:JoyUtilities):
         self.opr_mode = msg.opr_mode
@@ -78,8 +80,8 @@ class ObstacleAvoidance(Node):
     def publish_messages(self):
         self.obs_set_point_pub_.publish(self.obs_set_point)
         self.obs_cmd_vel_pub_.publish(self.obs_vel)
-        self.obs_set_point_pub_.publish(self.obs_set_point)
-        self.obs_cmd_vel_pub_.publish(self.obs_vel)
+        # self.obs_set_point_pub_.publish(self.obs_set_point)
+        # self.obs_cmd_vel_pub_.publish(self.obs_vel)
 
     def objectDetect(self):
         try:
@@ -133,16 +135,25 @@ class ObstacleAvoidance(Node):
                     #============================================== COMMAND STATUS
                 self.get_logger().info(f'area rock{self.rock_area}')
                 if self.rock_area > 0 or self.coral_area > 0 :
-                    if self.rock_area > self.frame_area/16 or self.coral_area > self.frame_area/16:
-                        if self.status_avoid != 1: # detect pertama kali
-                            self.status_avoid = 1
-                            self.obs_vel.linear.y = 0.0
-                            # self.obs_vel.linear.z = 0.5
-                            self.last_depth = self.depth
-                            self.get_logger().info('Rock/Coral is Close')
-                            self.ranges_scan_last = self.ranges_scan
-                        self.get_logger().info('Start Rock/Coral Avoidance Movement...')
-                        self.set_point_depth = self.depth - 50 # 30cm offset
+                    if self.rock_area > self.frame_area/10 or self.coral_area > self.frame_area/10:
+                        if self.avoid_mode == 0 :
+                            if self.status_avoid != 1: # detect pertama kali
+                                self.status_avoid = 1
+                                self.obs_vel.linear.y = 0.0
+                                # self.obs_vel.linear.z = 0.5
+                                self.last_depth = self.depth
+                                self.get_logger().info('Rock/Coral is Close')
+                                self.ranges_scan_last = self.ranges_scan
+                                self.obs_set_point.set_point_depth = self.set_point_depth
+                            self.set_point_depth = self.depth - 50 # 30cm offset
+                            self.get_logger().info('Start Rock/Coral Vertical Avoidance Movement...')
+
+                        elif self.avoid_mode == 1 :
+                            if self.status_avoid != 1: # detect pertama kali
+                                self.get_logger().info('pipe is Close')
+                                self.status_avoid = 1
+                                self.target_move_time = time.time() + self.duration[0] # bergeser selama durasi 0 
+                            self.get_logger().info('Start Rock/Coral Horizontal Avoidance Movement...')
 
                 # if self.pipe_area > 0:
                 #     if self.pipe_area > self.frame_area/16:
@@ -161,47 +172,88 @@ class ObstacleAvoidance(Node):
                 #             #     self.target_yaw += 360
                 #     if self.status_avoid == 3:
                 #         self.pipe_offset =  self.pipe_center_x - center_frame_x
+
+
                 #============================================== COMMAND GERAKAN
-                if self.status_avoid == 1 : #gerakan menghindar
-                    if self.depth >= self.set_point_depth+20:
-                        self.obs_set_point.set_point_depth = self.set_point_depth
-                        self.obs_vel.linear.z = 0.5
-                        self.obs_vel.linear.y = 0.0
-                        self.start_time_move = time.time()
-                        self.get_logger().info(f'set_point_depth {self.set_point_depth}')
-                        self.get_logger().info('Goin Up')
-                    else:
-                        self.get_logger().info('Start Moving Forward')
-                        self.obs_set_point.set_point_depth = self.set_point_depth
-                        self.obs_vel.linear.y = 0.5
-                        self.obs_vel.linear.z = 0.0
-                        # if self.ranges_scan < self.ranges_scan_last - 100:
-                        #     self.elapsed_time_move = time.time() - self.start_time_move
-                        # elif self.ranges_scan > self.ranges_scan_last + 100:
-                        #     self.get_logger().info('getting elapsed time')
-                        #     self.status_avoid = 2
-                        end_time_move = time.time()
-                        if self.delay <= end_time_move - self.start_time_move:
+                if self.avoid_mode == 0 : # vertical avoid
+                    if self.status_avoid == 1 : #gerakan menghindar
+                        if self.depth >= self.set_point_depth+20:
+                            self.obs_set_point.set_point_depth = self.set_point_depth
+                            self.obs_vel.linear.z = 0.5
+                            self.obs_vel.linear.y = 0.0
                             self.start_time_move = time.time()
-                            self.status_avoid = 2
-                    self.ranges_scan_last = self.ranges_scan
-                elif self.status_avoid == 2:#gerakan setelah melewati batu
-                    # self.obs_set_point.set_point_depth = self.depth
-                    end_time_move = time.time()
-                    # self.obs_vel.linear.x = 0.5 
-                    if self.delay <= end_time_move - self.start_time_move:
-                        self.obs_set_point.set_point_depth = self.last_depth
+                            self.get_logger().info(f'set_point_depth {self.set_point_depth}')
+                            self.get_logger().info('Goin Up')
+                        else:
+                            self.get_logger().info('Start Moving Forward')
+                            self.obs_set_point.set_point_depth = self.set_point_depth
+                            self.obs_vel.linear.y = 0.4
+                            self.obs_vel.linear.z = 0.0
+                            # if self.ranges_scan < self.ranges_scan_last - 100:
+                            #     self.elapsed_time_move = time.time() - self.start_time_move
+                            # elif self.ranges_scan > self.ranges_scan_last + 100:
+                            #     self.get_logger().info('getting elapsed time')
+                            #     self.status_avoid = 2
+                            end_time_move = time.time()
+                            if self.delay <= end_time_move - self.start_time_move:
+                                self.start_time_move = time.time()
+                                self.status_avoid = 2
+                        self.ranges_scan_last = self.ranges_scan
+                    elif self.status_avoid == 2:#gerakan setelah melewati batu
+                        # self.obs_set_point.set_point_depth = self.depth
+                        end_time_move = time.time()
+                        # self.obs_vel.linear.x = 0.5 
+                        if self.delay <= end_time_move - self.start_time_move:
+                            self.obs_set_point.set_point_depth = self.last_depth
+                            self.obs_vel.linear.y = 0.0
+                            self.get_logger().info('Success Avoiding Rock/Coral')
+                            self.status_avoid = 0
+                            self.avoid_mode = 1
+                    elif self.status_avoid == 0:
+                        self.obs_vel.linear.y = 0.5
+                        self.obs_set_point.set_point_depth = self.depth
+                    else:
                         self.obs_vel.linear.y = 0.0
-                        self.get_logger().info('Success Avoiding Rock/Coral')
-                        self.status_avoid = 3
-                elif self.status_avoid == 0:
-                    self.obs_vel.linear.y = 0.5
-                else:
-                    self.obs_vel.linear.y = 0.0
-                    self.obs_vel.linear.z = 0.0
+                        self.obs_vel.linear.z = 0.0
+                
+                elif self.avoid_mode == 1: # horizontal avoid
+                    if self.status_avoid == 0 : # maju
+                        self.get_logger().info('Moving Forward')
+                        self.obs_vel.linear.y = self.throtle[0]
+                        self.obs_vel.linear.x = 0.0
+                        # self.obs_set_point.set_point_depth = self.depth
 
-
-
+                    elif self.status_avoid == 1 : # gerakan menghindar
+                        #kekanan
+                        if time.time() < self.target_move_time and self.avoid_step == 0:
+                            self.get_logger().info('Moving Right')
+                            self.obs_vel.linear.y = 0.0
+                            self.obs_vel.linear.x = self.throtle[1]
+                        elif time.time() >= self.target_move_time and self.avoid_step == 0 :
+                            self.target_move_time = time.time() + self.duration[1] #waktu maju
+                            self.avoid_step = 1
+                        #maju
+                        if time.time() < self.target_move_time and self.avoid_step == 1:
+                            self.get_logger().info('Moving Forward')
+                            self.obs_vel.linear.y = self.throtle[2]
+                            self.obs_vel.linear.x = 0.0
+                        elif time.time() >= self.target_move_time and self.avoid_step == 1 :
+                            self.target_move_time = time.time() + self.duration[2] #waktu kembali
+                            self.avoid_step = 2
+                        #kekiri
+                        if time.time() < self.target_move_time and self.avoid_step == 2:
+                            self.get_logger().info('Moving Left')
+                            self.obs_vel.linear.y = 0.0
+                            self.obs_vel.linear.x = self.throtle[3]
+                        elif time.time() >= self.target_move_time and self.avoid_step == 2 :
+                            self.status_avoid = 0
+                            self.avoid_step = 0
+                        
+                    elif self.status_avoid == 2 : # selesai menghindar
+                        self.get_logger().info('Stop')
+                        self.obs_vel.linear.y = 0.0
+                        self.obs_vel.linear.x = 0.0
+                        
                 # if self.status_avoid == 3:#gerakan menghindar pipa
                 #     if self.imu_yaw <= self.target_yaw + 5 and self.imu_yaw >= self.target_yaw - 5:
                 #         self.obs_vel.linear.x = 0.0
@@ -230,39 +282,34 @@ class ObstacleAvoidance(Node):
                 cv2.putText(annotated_frame, fps_text, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             else:
                 self.status_avoid = 0
+                self.avoid_mode = 0
                 annotated_frame = self.frame
                 # cv2.imshow("camera", self.frame)
                 # cv2.waitKey(1)
             cv2.imshow("YOLOv8 Tracking", annotated_frame)
             cv2.waitKey(1)
             self.get_logger().info(f'Status_Avoid {self.status_avoid}')
+            self.get_logger().info(f'Step_Avoid {self.avoid_step}')
+            self.get_logger().info(f'Avoid Mode {self.avoid_mode}')
         except Exception as e:
             self.get_logger().error(f"Frame is empty: {str(e)}")
 
-    def pid_param_yaml(self):
+    def param_yaml(self):
         try:
             with open(self.yaml_filepath, 'r') as yaml_file:
                 data = yaml.safe_load(yaml_file)
-
             # Extract pid_parameters for serial_node
-            obstacle_pid_parameters = data['obstacle_avoidance']['pid_parameters']
+            obstacle_parameters = data['obstacle_avoidance']
 
-            if obstacle_pid_parameters:
-                self.k_heading[0] = obstacle_pid_parameters.get('kp_heading', 0)
-                self.k_heading[1] = obstacle_pid_parameters.get('ki_heading', 0)
-                self.k_heading[2] = obstacle_pid_parameters.get('kd_heading', 0)
-                self.k_lateral[0] = obstacle_pid_parameters.get('kp_lateral', 0)
-                self.k_lateral[1] = obstacle_pid_parameters.get('ki_lateral', 0)
-                self.k_lateral[2] = obstacle_pid_parameters.get('kd_lateral', 0)
-                self.throtle = obstacle_pid_parameters.get('throtle', 0)
-
-                self.pipe_heading_pid.kp = self.k_heading[0]
-                self.pipe_heading_pid.ki = self.k_heading[1]
-                self.pipe_heading_pid.kd = self.k_heading[2]
-                self.pipe_lateral_pid.kp = self.k_lateral[0]
-                self.pipe_lateral_pid.ki = self.k_lateral[1]
-                self.pipe_lateral_pid.kd = self.k_lateral[2]
-
+            if obstacle_parameters:
+                self.throtle[0] = obstacle_parameters.get('throtle0', 0)
+                self.throtle[1] = obstacle_parameters.get('throtle1', 0)
+                self.throtle[2] = obstacle_parameters.get('throtle2', 0)
+                self.throtle[3] = obstacle_parameters.get('throtle3', 0)
+                self.duration[0] = obstacle_parameters.get('timer0', 0)
+                self.duration[1] = obstacle_parameters.get('timer1', 0)
+                self.duration[2] = obstacle_parameters.get('timer2', 0)
+                # self.avoid_mode = obstacle_parameters.get('mode', 0)
             else:
                 print("No PID parameters found for serial_node in the YAML file.")
         

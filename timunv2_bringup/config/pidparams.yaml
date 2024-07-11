@@ -28,7 +28,7 @@ pipeline_navigation:
     throtle: 0.3
 serial_node:
   pid_parameters:
-    kd_depth: 272.526
+    kd_depth: 275
     kd_pitch: 20.0
     kd_roll: 30.0
     kd_yaw: 55.0
@@ -36,7 +36,8 @@ serial_node:
     ki_pitch: 0.0
     ki_roll: 0.0
     ki_yaw: 0.0
-    kp_depth: 86.129
+    kp_depth: 35
     kp_pitch: -25.0
     kp_roll: 12.0
     kp_yaw: 12.0
+    imu_select: 0

@@ -23,7 +23,8 @@ setup(
             "serial_node = timunv2_serial.serial_node:main",
             "ping_node = timunv2_serial.ping_node:main",
             "bluerov2_mavlink = timunv2_serial.bluerov2_mavlink:main",
-            "record_node = timunv2_serial.record_node:main"
+            "record_node = timunv2_serial.record_node:main",
+            "display_data_node = timunv2_serial.display_data:main"
         ],
     },
 )

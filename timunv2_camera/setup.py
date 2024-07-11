@@ -22,7 +22,8 @@ setup(
         'console_scripts': [
             "camera_publisher_node = timunv2_camera.camera_publisher_node:main",
             "camera_subscriber_node = timunv2_camera.camera_subscriber_node:main",
-            "gstreamer_publisher_node = timunv2_camera.gstreamer_publisher_node:main"
+            "gstreamer_publisher_node = timunv2_camera.gstreamer_publisher_node:main",
+            "camera_publisher_gst = timunv2_camera.camera_publisher_gst:main"
         ],
     },
 )

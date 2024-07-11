@@ -14,6 +14,9 @@
 
   <exec_depend>joy</exec_depend>
   <exec_depend>timunv2_controller</exec_depend>
+  <exec_depend>timunv2_camera</exec_depend>
+  <exec_depend>timunv2_pipefollowing</exec_depend>
+  <exec_depend>timunv2_serial</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
