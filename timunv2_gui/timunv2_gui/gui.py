@@ -27,13 +27,14 @@ from kivy.config import Config
 from cv_bridge import CvBridge
 
 
-cur_dir = os.path.dirname(os.path.realpath(__file__))
-# CONF =  os.path.join(cur_dir,'..','..','timunv2_bringup','config','pidparams.yaml')
-# SHARE = os.path.join(cur_dir,'..','share')
-# GUI_KIVY = os.path.join(cur_dir,'..','config','hud.kv')
-CONF =  "/home/tkd/timunv2_ws/src/timunv2_bringup/config/pidparams.yaml"
-SHARE = "/home/tkd/timunv2_ws/src/timunv2_gui/share"
-GUI_KIVY = "/home/tkd/timunv2_ws/src/timunv2_gui/config/hud.kv"
+cur_dir = "/home/ardiar/ws/timunv2_ws/src/timun_ros2_packages"
+
+CONF =  os.path.join(cur_dir,'timunv2_bringup','config','pidparams.yaml')
+SHARE = os.path.join(cur_dir,'timunv2_gui','share')
+GUI_KIVY = os.path.join(cur_dir,'timunv2_gui','config','hud.kv')
+# CONF =  "/home/tkd/timunv2_ws/src/timunv2_bringup/config/pidparams.yaml"
+# SHARE = "/home/tkd/timunv2_ws/src/timunv2_gui/share"
+# GUI_KIVY = "/home/tkd/timunv2_ws/src/timunv2_gui/config/hud.kv"
 Builder.load_file(GUI_KIVY)
 
 class GuiNode(Node):
@@ -54,30 +55,32 @@ class GuiNode(Node):
         self.publisher_des      = self.create_publisher(SetPoint,"/gui_set_point",10)
         self.publisher_gui      = self.create_publisher(GuiUtilities,"/gui_utl",10)
         self.publisher_param    = self.create_publisher(ParamData,"/gui_param",10)
-        # self.subscription       = self.create_subscription(SensorData,'/serial_sensor_data',
-        #                                              self.listener_callback,10)
-        self.subscription2      = self.create_subscription(Image, '/camera_front', 
-                                                self.listener_camF, 10)
-        # self.status_sub         = self.create_subscription(JoyUtilities,"/joy_cmd_utl",
-        #                                                self.status_callback, 10)
-        # self.subscription
-        self.subscription2
+        self.subscription       = self.create_subscription(SensorData,'/serial_sensor_data',
+                                                    self.listener_callback,10)
+        self.sub_camF      = self.create_subscription(Image, '/camera_front', 
+                                                    self.listener_camF, 10)
+        self.sub_camB      = self.create_subscription(Image, '/camera_bottom', 
+                                                    self.listener_camB, 10)
+        self.status_sub         = self.create_subscription(JoyUtilities,"/joy_cmd_utl",
+                                                    self.status_callback, 10)
+        self.subscription
+        self.sub_camB
+        self.sub_camF
         self.cv_bridge = CvBridge()
     def status_callback(self,msg):
         self.arm_hw     = msg.arm_hw
         self.arm_sw     = msg.arm_sw
-        self.mov_mode   = msg.move_mode
+        self.mov_mode   = msg.mov_mode
     def listener_callback(self,msg):
             self.roll = msg.imu_yaw
             self.pitch = msg.imu_pitch
             self.yaw = msg.imu_yaw
             self.depth = msg.depth
-            self.range = msg.range_scan
-            self.bat_nuc = msg.battery_nuc
-            self.bat_rob = msg.battery_robot
+            self.range = msg.ranges_scan
+            # self.bat_nuc = msg.battery_nuc
+            # self.bat_rob = msg.battery_robot
     def listener_camF(self,msg):
             self.camF =self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-            self.camB =self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
     def listener_camB(self,msg):
             self.camB =self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
     def send_var(self):
@@ -168,7 +171,8 @@ class TimunLayout(Widget):
         self.setting_popup = Popup(title="Settings", content=self.show, 
                             size_hint=(None,None), size=(800,800))
         logging.getLogger().addHandler(LogUpdateHandler(self))
-        Clock.schedule_interval(self.update,0.03)
+        Clock.schedule_interval(self.update_cam,0.03)
+        Clock.schedule_interval(self.update_sensor,0.01)
         Clock.schedule_interval(self.update_param,1)
         
     def update_param(self,dt):
@@ -210,8 +214,8 @@ class TimunLayout(Widget):
             self.msg2.oa_iou            = float(self.config['obstacle_avoidance']['pid_parameters']['iou'])
         self.node.publisher_param.publish(self.msg2)
 
-    def update(self,dt):
-        rclpy.spin_once(self.node, timeout_sec=0.05)
+    def update_cam(self,dt):
+        rclpy.spin_once(self.node, timeout_sec=1)
         r,p,y,d,ra,bat_n,bat_r,camF,camB,arm_hw,arm_sw,mov_mode = self.node.send_var()
         if(self.ids.camF_btn.state == 'down'):
             cam = camF
@@ -226,14 +230,17 @@ class TimunLayout(Widget):
             if self.count_cam == 200:
                 logging.debug("Trying Connect to Camera...")
                 self.count_cam = 0
-        if all(x != 999 for x in [r,p,y,d,ra,bat_n,bat_r]):
-            self.actual_roll = r
-            self.actual_pitch = p
-            self.actual_yaw = y
-            self.ids.roll_actual.text =f"{r}'"
-            self.ids.pitch_actual.text =f"{p}'"
-            self.ids.yaw_actual.text =f"{y}'"
-            self.ids.depth_actual.text =f"{d} m"
+    def update_sensor(self,dt):
+        rclpy.spin_once(self.node, timeout_sec=0.01)
+        r,p,y,d,ra,bat_n,bat_r,camF,camB,arm_hw,arm_sw,mov_mode = self.node.send_var()
+        if all(x != 999 for x in [r,p,y,d,r]):
+            self.actual_roll = round(r,2)
+            self.actual_pitch = round(p,2)
+            self.actual_yaw = round(y,2)
+            self.ids.roll_actual.text =f"{self.actual_roll}'"
+            self.ids.pitch_actual.text =f"{self.actual_pitch}'"
+            self.ids.yaw_actual.text =f"{self.actual_yaw}'"
+            self.ids.depth_actual.text =f"{d} mbar"
             self.ids.range_actual.text =f"{ra} m"
             # self.ids.bat_nuc.text =f"{bat_n}%"
             # self.ids.bat_robot.text =f"{bat_r}%"
@@ -278,10 +285,7 @@ class TimunLayout(Widget):
         msg1.throtle_mode = check_throtle(self)
         msg1.lumen = check_lumen(self)
         self.node.publisher_gui.publish(msg1)
-        
-        
-        
-    
+
     def update_log(self,log_message):
         now = datetime.now().strftime("[%H:%M:%S:%f]")
         formatted_log_message = f'\n{now} {log_message}'
