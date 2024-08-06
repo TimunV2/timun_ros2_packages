@@ -11,17 +11,17 @@ obstacle_avoidance:
     kp_lateral: -0.005
     kp_range: 0.0
     threshold: 1.1
-    throtle: 0.3
+    throtle: 0.5
 pipeline_navigation:
   pid_parameters:
     iou: 1.1
-    kd_heading: 0.001
+    kd_heading: 0.0015
     kd_lateral: 0.002
     kd_range: 0.05
     ki_heading: 0.0
     ki_lateral: 0.0
     ki_range: 0.0
-    kp_heading: 0.0015
+    kp_heading: 0.0012
     kp_lateral: 0.003
     kp_range: 0.0
     threshold: 1.1

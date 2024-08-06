@@ -18,7 +18,7 @@ class ObstacleAvoidance(Node):
         super().__init__("Obstacle_Avoidance_node")
         self.get_logger().info("Obstacle_Avoidance_node has been started")
         self.camera_sub_ = self.create_subscription(Image, "/camera_front", self.image_callback,10)
-        self.ping_sensor_sub_ = self.create_subscription(PingData, "/ping_data", self.ping_callback, 10)
+        # self.ping_sensor_sub_ = self.create_subscription(PingData, "/ping_data", self.ping_callback, 10)
         self.joy_cmd_utl_sub_ = self.create_subscription(JoyUtilities, "/joy_cmd_utl", self.joy_cmd_utl_callback, 10)
         self.serial_sensor_data_sub_ = self.create_subscription(SensorData, "/serial_sensor_data", self.serial_sensor_data_callback, 10)
 
@@ -50,7 +50,8 @@ class ObstacleAvoidance(Node):
         self.pipe_area = 0
         self.pipe_center_y = 0
         self.last_depth = 0
-        self.ranges_scan_last = 0
+        self.ranges_scan_last = 0.0
+        self.ranges_scan = 0.6
         self.opr_mode = 0
         self.delay = 6
 
@@ -70,8 +71,9 @@ class ObstacleAvoidance(Node):
         self.opr_mode = msg.opr_mode
 
     def ping_callback(self, msg:PingData):
-        self.ranges_scan = msg.ranges_scan/1000.0
-        self.confidence = msg.confidence
+        # self.ranges_scan = msg.ranges_scan/1000.0
+        self.ranges_scan = 0.6
+        # self.confidence = msg.confidence
         
     def serial_sensor_data_callback(self,msg:SensorData):
         self.imu_yaw = msg.imu_yaw
@@ -210,7 +212,7 @@ class ObstacleAvoidance(Node):
                             self.status_avoid = 0
                             self.avoid_mode = 1
                     elif self.status_avoid == 0:
-                        self.obs_vel.linear.y = 0.5
+                        self.obs_vel.linear.y = 0.6
                         self.obs_set_point.set_point_depth = self.depth
                     else:
                         self.obs_vel.linear.y = 0.0
