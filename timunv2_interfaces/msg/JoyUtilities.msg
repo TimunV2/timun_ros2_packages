@@ -9,4 +9,8 @@ int8 mov_mode
 int8 opr_mode
 int8 data_log
 
+bool vo_mode
+int8 pipe_mode
+int8 oa_mode
+
 float32 max_throtle

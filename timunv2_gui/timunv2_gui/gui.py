@@ -26,15 +26,11 @@ from kivy.uix.popup import Popup
 from kivy.config import Config
 from cv_bridge import CvBridge
 
-
-cur_dir = "/home/ardiar/ws/timunv2_ws/src/timun_ros2_packages"
+cur_dir = "/home/tkd/timunv2_ws/src"
 
 CONF =  os.path.join(cur_dir,'timunv2_bringup','config','pidparams.yaml')
 SHARE = os.path.join(cur_dir,'timunv2_gui','share')
-GUI_KIVY = os.path.join(cur_dir,'timunv2_gui','config','hud.kv')
-# CONF =  "/home/tkd/timunv2_ws/src/timunv2_bringup/config/pidparams.yaml"
-# SHARE = "/home/tkd/timunv2_ws/src/timunv2_gui/share"
-# GUI_KIVY = "/home/tkd/timunv2_ws/src/timunv2_gui/config/hud.kv"
+GUI_KIVY = os.path.join(cur_dir,'timunv2_gui','config','hud_nuc.kv')
 Builder.load_file(GUI_KIVY)
 
 class GuiNode(Node):
@@ -52,9 +48,13 @@ class GuiNode(Node):
         self.arm_hw = False
         self.arm_sw = False
         self.mov_mode = 0
+        self.vo_mode = False
+        self.pipe_mode = 0
+        self.oa_mode = 0
         self.publisher_des      = self.create_publisher(SetPoint,"/gui_set_point",10)
         self.publisher_gui      = self.create_publisher(GuiUtilities,"/gui_utl",10)
         self.publisher_param    = self.create_publisher(ParamData,"/gui_param",10)
+        
         self.subscription       = self.create_subscription(SensorData,'/serial_sensor_data',
                                                     self.listener_callback,10)
         self.sub_camF      = self.create_subscription(Image, '/camera_front', 
@@ -68,6 +68,9 @@ class GuiNode(Node):
         self.sub_camF
         self.cv_bridge = CvBridge()
     def status_callback(self,msg):
+        self.vo_mode    = msg.vo_mode
+        self.pipe_mode  = msg.pipe_mode
+        self.oa_mode    = msg.oa_mode
         self.arm_hw     = msg.arm_hw
         self.arm_sw     = msg.arm_sw
         self.mov_mode   = msg.mov_mode
@@ -84,7 +87,7 @@ class GuiNode(Node):
     def listener_camB(self,msg):
             self.camB =self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
     def send_var(self):
-            return self.roll,self.pitch,self.yaw,self.depth,self.range,self.bat_nuc,self.bat_rob,self.camF,self.camB,self.arm_hw,self.arm_sw,self.mov_mode
+            return self.roll,self.pitch,self.yaw,self.depth,self.range,self.bat_nuc,self.bat_rob,self.camF,self.camB,self.arm_hw,self.arm_sw,self.mov_mode,self.vo_mode,self.pipe_mode,self.oa_mode
 
 class TimunLayout(Widget):
     actual_roll = NumericProperty()
@@ -101,9 +104,6 @@ class TimunLayout(Widget):
         with self.ids.pitch.canvas:
             Color(0,0,0,0)
             Rectangle(pos=self.pos, size=Window.size)
-        # with self.ids.yaw.canvas:
-        #     Color(0,0,0,0)
-        #     Rectangle(pos=self.pos, size=Window.size)
         Config.set('kivy', 'exit_on_escape', '0')
         Config.write()
 
@@ -118,8 +118,8 @@ class TimunLayout(Widget):
         self.ids.throtleB.state ="down"
         self.ids.camF_btn.state ='down'
 
-        self.pitch_x = (Window.size[0]*.95) - (self.ids.roll.size[1]/2)
-        self.pitch_y = (Window.size[1]*.825)- (self.ids.roll.size[0]/2)
+        self.pitch_x = (Window.size[0]*.93) - (self.ids.roll.size[1]/2)
+        self.pitch_y = (Window.size[1]*.8)- (self.ids.roll.size[0]/2)
         self.yaw_x = (Window.size[0]*.5) - 100
         self.yaw_y = (Window.size[1]*.86)
         print(self.pitch_x,self.pitch_y)
@@ -216,7 +216,7 @@ class TimunLayout(Widget):
 
     def update_cam(self,dt):
         rclpy.spin_once(self.node, timeout_sec=1)
-        r,p,y,d,ra,bat_n,bat_r,camF,camB,arm_hw,arm_sw,mov_mode = self.node.send_var()
+        r,p,y,d,ra,bat_n,bat_r,camF,camB,arm_hw,arm_sw,mov_mode,vo_mode,pipe_mode,oa_mode = self.node.send_var()
         if(self.ids.camF_btn.state == 'down'):
             cam = camF
         elif(self.ids.camB_btn.state == 'down'):
@@ -232,7 +232,7 @@ class TimunLayout(Widget):
                 self.count_cam = 0
     def update_sensor(self,dt):
         rclpy.spin_once(self.node, timeout_sec=0.01)
-        r,p,y,d,ra,bat_n,bat_r,camF,camB,arm_hw,arm_sw,mov_mode = self.node.send_var()
+        r,p,y,d,ra,bat_n,bat_r,camF,camB,arm_hw,arm_sw,mov_mode,vo_mode,pipe_mode,oa_mode = self.node.send_var()
         if all(x != 999 for x in [r,p,y,d,r]):
             self.actual_roll = round(r,2)
             self.actual_pitch = round(p,2)
@@ -261,6 +261,9 @@ class TimunLayout(Widget):
             self.ids.sub_mode.text = "Depth-Stabilize"
         else:
             self.ids.sub_mode.text = "Manual"
+        self.ids.VO.state = update_toggle(vo_mode)
+        self.ids.pipeO.state,self.ids.pipeT.state = update_obj(pipe_mode)
+        self.ids.oaO.state,self.ids.oaT.state = update_obj(oa_mode)
         self.update_gauge()
         self.current_timestamp = datetime.now()
         self.runtime = (self.current_timestamp - self.start_timestamp)
@@ -528,6 +531,14 @@ def check_toggle(id_state):
         check = True
     return check
 
+def update_toggle(mode):
+    if mode == True:
+        id_state = 'down'
+    else :
+        id_state = 'normal'
+    return id_state
+
+
 def check_throtle(self):
     if self.ids.throtleP == 'down':
         check = 0
@@ -547,6 +558,22 @@ def check_obj(state1,state2):
     else:
         check = 0
     return check
+
+def update_obj(mode):
+    if mode == 0:
+        state1 = 'normal'
+        state2 = 'normal'
+    elif mode == 1:
+        state1 = 'down'
+        state2 = 'normal'
+    elif mode == 2:
+        state1 = 'normal'
+        state2 = 'down'
+    elif mode == 3:
+        state1 = 'down'
+        state2 = 'down'
+    return state1,state2
+
 def check_control(self):
     if self.ids.modeM.state == 'down' :
         check = 1

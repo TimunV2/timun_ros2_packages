@@ -6,6 +6,7 @@ from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Twist
 from timunv2_interfaces.msg import JoyUtilities
 from timunv2_interfaces.msg import HeartBeat
+from timunv2_interfaces.msg import GuiUtilities
 
 mov_button_new = False
 mov_button_old = False
@@ -17,6 +18,7 @@ class JoySubNode(Node):
         #subscriber
         self.joy_sub_ = self.create_subscription(Joy, "/joy", self.joy_callback, 10)
         self.rov_heartbeat_sub_ = self.create_subscription(HeartBeat, "/rov_heartbeat", self.heartbeat_callback, 10)
+        self.rov_heartbeat_sub_ = self.create_subscription(GuiUtilities, "/gui_utl", self.gui_callback, 10)
 
         #publisher
         self.joy_cmd_vel_pub_ = self.create_publisher(Twist, "/joy_cmd_vel", 10)
@@ -41,6 +43,9 @@ class JoySubNode(Node):
         self.operation_mode = 0
         self.data_log = 0
         self.max_throtle_scale = 1.0
+        self.vo_mode = False
+        self.pipe_mode = 0
+        self.oa_mode = 0
 
         #other variable
         self.sel_button_new = False
@@ -58,12 +63,25 @@ class JoySubNode(Node):
         self.stabilize = False
         self.depthhold = False
         self.r3_button = False
+        self.gui_vo_mode = 0
+        self.gui_vo_mode_last = 0
+        self.gui_pipe_mode = 0
+        self.gui_pipe_mode_last = 0
+        self.gui_oa_mode = 0
+        self.gui_oa_mode_last = 0
+        self.throtle_mode = 0
 
         #heartbeat variable
         self.last_heartbeat_time = self.get_clock().now()
         self.heartbeat_status = False
         self.last_heartbeat_status = False
         self.heartbeat_sequence = 0
+
+    def gui_callback(self,msg:GuiUtilities):
+        self.gui_vo_mode = msg.vo_mode
+        self.gui_pipe_mode = msg.pipe_mode
+        self.gui_oa_mode = msg.oa_mode
+        self.throtle_mode = msg.throtle_mode
 
     def heartbeat_callback(self, msg: HeartBeat):
         self.heartbeat_status = True
@@ -160,10 +178,50 @@ class JoySubNode(Node):
         self.opr_button_new = bool(msg.buttons[2])
         if( self.opr_button_new == True and self.opr_button_old == False):
             self.operation_mode += 1
-            if(self.operation_mode > 6):
+            if(self.operation_mode > 7):
                 self.operation_mode = 0
-        self.opr_button_old = self.opr_button_new
+            if self.operation_mode == 0:# manual operation
+                self.vo_mode = False
+                self.pipe_mode = 0
+                self.oa_mode = 0
+            if self.operation_mode == 1:# pipe following operation
+                self.vo_mode = False
+                self.pipe_mode = 3
+                self.oa_mode = 0
+            if self.operation_mode == 2:# obstacle avoidance operation
+                self.vo_mode = False
+                self.pipe_mode = 0
+                self.oa_mode = 3
+            if self.operation_mode == 3:# Visdom operation
+                self.vo_mode = True
+                self.pipe_mode = 0
+                self.oa_mode = 0
+            if self.operation_mode == 4:# Pipe following with Obstacle avoidance operation
+                self.vo_mode = False
+                self.pipe_mode = 3
+                self.oa_mode = 3
+            if self.operation_mode == 5:# Pipe following with Visdom operation
+                self.vo_mode = True
+                self.pipe_mode = 3
+                self.oa_mode = 0
+            if self.operation_mode == 6:# Obstacle Avoidance with Visdom operation
+                self.vo_mode = True
+                self.pipe_mode = 0
+                self.oa_mode = 3
+            if self.operation_mode == 7:# Pipe Following with Obstacle Avoidance and Visdom Operation
+                self.vo_mode = True
+                self.pipe_mode = 3
+                self.oa_mode = 3
 
+        self.opr_button_old = self.opr_button_new
+        if self.gui_vo_mode != self.gui_vo_mode_last or self.gui_pipe_mode!=self.gui_pipe_mode_last or self.gui_oa_mode!=self.gui_oa_mode_last:
+            self.vo_mode = self.gui_vo_mode
+            self.pipe_mode = self.gui_pipe_mode
+            self.oa_mode = self.gui_oa_mode
+
+        self.gui_vo_mode_last = self.gui_vo_mode
+        self.gui_oa_mode_last = self.gui_oa_mode
+        self.gui_pipe_mode_last = self.gui_pipe_mode
         #r3 button as IMU reset
         self.r3_button = bool(msg.buttons[11])
 
@@ -177,6 +235,9 @@ class JoySubNode(Node):
         self.cmd_utl.depthhold = self.depthhold
         self.cmd_utl.max_throtle = self.max_throtle_scale
         self.cmd_utl.imu_reset = self.r3_button
+        self.cmd_utl.vo_mode = self.vo_mode
+        self.cmd_utl.pipe_mode = self.pipe_mode
+        self.cmd_utl.oa_mode = self.oa_mode
 
         self.joy_cmd_vel_pub_.publish(self.cmd_vel)
         self.joy_cmd_utl_pub_.publish(self.cmd_utl)
